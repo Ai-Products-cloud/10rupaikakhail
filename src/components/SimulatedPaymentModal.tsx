@@ -105,26 +105,26 @@ export default function SimulatedPaymentModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="bg-slate-900 border border-emerald-900/60 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden relative text-white">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200">
+      <div className="bg-slate-900 border border-emerald-900/60 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden relative text-white max-h-[90dvh] flex flex-col">
         {/* Header */}
-        <div className="p-6 border-b border-white/10 flex items-center justify-between bg-gradient-to-r from-emerald-950/50 to-slate-900">
+        <div className="p-4 sm:p-6 border-b border-white/10 flex items-center justify-between bg-gradient-to-r from-emerald-950/50 to-slate-900 flex-shrink-0">
           <div>
-            <span className="text-[11px] font-bold uppercase tracking-wider text-amber-400 block">
+            <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-amber-400 block">
               Official Entry Checkout
             </span>
-            <h3 className="text-xl font-extrabold text-white">{draw.title}</h3>
+            <h3 className="text-lg sm:text-xl font-extrabold text-white">{draw.title}</h3>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition"
+            className="min-w-[40px] min-h-[40px] flex items-center justify-center rounded-xl bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-5">
+        <div className="p-4 sm:p-6 space-y-4 sm:space-y-5 overflow-y-auto overscroll-contain">
           {confirmedEntry ? (
             /* Confirmation Screen */
             <div className="text-center py-4 space-y-4">

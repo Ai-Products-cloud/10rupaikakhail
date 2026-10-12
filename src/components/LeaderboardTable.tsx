@@ -43,8 +43,117 @@ export default function LeaderboardTable({
         )}
       </div>
 
-      {/* Leaderboard Table Container */}
-      <div className="overflow-x-auto rounded-2xl border border-white/10 bg-slate-900/80 backdrop-blur-md shadow-2xl">
+      {/* Mobile Card List View (< md) */}
+      <div className="md:hidden space-y-3">
+        {items.length === 0 ? (
+          <div className="p-8 text-center text-xs text-slate-500 bg-slate-900/80 rounded-2xl border border-white/5">
+            No verified referrals registered yet. Be the first to invite friends and take the #1 spot!
+          </div>
+        ) : (
+          items.map((item) => {
+            const isFirst = item.rank === 1;
+            const isSecond = item.rank === 2;
+            const isThird = item.rank === 3;
+
+            return (
+              <div
+                key={item.userId}
+                className={`p-4 rounded-2xl border transition shadow-lg ${
+                  isFirst
+                    ? 'bg-amber-950/30 border-amber-500/40'
+                    : isSecond
+                    ? 'bg-slate-900/90 border-slate-400/30'
+                    : isThird
+                    ? 'bg-amber-950/20 border-amber-700/30'
+                    : 'bg-slate-900/80 border-white/5'
+                }`}
+              >
+                <div className="flex items-center justify-between gap-2 mb-3">
+                  <div className="flex items-center gap-3">
+                    {/* Rank Indicator */}
+                    {isFirst ? (
+                      <div className="w-9 h-9 rounded-full bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 flex items-center justify-center font-black shadow-md shadow-amber-500/30 text-sm">
+                        1
+                      </div>
+                    ) : isSecond ? (
+                      <div className="w-9 h-9 rounded-full bg-gradient-to-r from-slate-200 to-slate-400 text-slate-950 flex items-center justify-center font-black shadow-md shadow-slate-300/30 text-sm">
+                        2
+                      </div>
+                    ) : isThird ? (
+                      <div className="w-9 h-9 rounded-full bg-gradient-to-r from-amber-700 to-amber-600 text-white flex items-center justify-center font-black shadow-md text-sm">
+                        3
+                      </div>
+                    ) : (
+                      <div className="w-9 h-9 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center font-bold font-mono text-xs border border-white/5">
+                        #{item.rank}
+                      </div>
+                    )}
+
+                    <div>
+                      <div className="font-extrabold text-white text-sm flex items-center gap-1.5">
+                        <span>{item.maskedName}</span>
+                        {isFirst && (
+                          <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-bold border border-amber-500/30">
+                            Leader
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-[10px] text-slate-400">Position #{item.rank}</span>
+                    </div>
+                  </div>
+
+                  <span className="text-[10px] font-semibold text-slate-400 bg-slate-950 px-2 py-1 rounded-lg border border-white/5">
+                    {item.totalEntries} Total Tickets
+                  </span>
+                </div>
+
+                {/* Referrals & Bonus Badges Grid */}
+                <div className="grid grid-cols-2 gap-2 text-center my-3">
+                  <div className="bg-slate-950/70 p-2.5 rounded-xl border border-white/5">
+                    <span className="text-[10px] text-slate-400 block mb-0.5">Verified Referrals</span>
+                    <span className="text-base font-black font-mono text-emerald-400">
+                      {item.successfulReferrals}
+                    </span>
+                  </div>
+                  <div className="bg-slate-950/70 p-2.5 rounded-xl border border-white/5">
+                    <span className="text-[10px] text-slate-400 block mb-0.5">Bonus Entries</span>
+                    <span className="text-base font-black font-mono text-amber-400">
+                      +{item.eligibleBonusEntries}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Projected Prize Pill */}
+                <div className="pt-2 border-t border-white/5">
+                  {isFirst ? (
+                    <div className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border border-amber-500/40 text-amber-300 font-bold text-xs">
+                      <Trophy className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+                      <span>1st Prize: Motorcycle CD 70 2027</span>
+                    </div>
+                  ) : isSecond ? (
+                    <div className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-slate-400/20 border border-slate-300/40 text-slate-200 font-bold text-xs">
+                      <Medal className="w-3.5 h-3.5 text-slate-300 flex-shrink-0" />
+                      <span>2nd Prize: iPhone 17 Pro Max</span>
+                    </div>
+                  ) : isThird ? (
+                    <div className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-amber-800/20 border border-amber-700/40 text-amber-400 font-bold text-xs">
+                      <Medal className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
+                      <span>3rd Prize: Android Smartphone</span>
+                    </div>
+                  ) : (
+                    <div className="text-center text-[11px] text-slate-500 py-1">
+                      Top Performer Certificate
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* Desktop Table View (hidden on mobile, visible on md+) */}
+      <div className="hidden md:block overflow-x-auto rounded-2xl border border-white/10 bg-slate-900/80 backdrop-blur-md shadow-2xl">
         <table className="w-full text-left text-sm text-slate-300">
           <thead className="bg-slate-950/80 text-xs uppercase tracking-wider text-slate-400 border-b border-white/10 font-bold">
             <tr>

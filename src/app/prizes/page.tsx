@@ -16,22 +16,22 @@ export default function PrizesPage() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-16">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-12 space-y-10 sm:space-y-16">
       {/* Title */}
-      <div className="text-center space-y-3 max-w-2xl mx-auto">
+      <div className="text-center space-y-2.5 sm:space-y-3 max-w-2xl mx-auto">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold uppercase">
           <Eye className="w-3.5 h-3.5" />
           <span>Interactive 3D Prize Inspector</span>
         </div>
-        <h1 className="text-4xl sm:text-5xl font-black text-white">Prize Catalog 2027</h1>
-        <p className="text-sm text-slate-300">
+        <h1 className="text-3xl sm:text-5xl font-black text-white">Prize Catalog 2027</h1>
+        <p className="text-xs sm:text-sm text-slate-300 px-2">
           Rotate and interact with all 3 prizes in real-time 3D. Inspect the iconic Pakistani CD 70 2027 model,
           the titanium iPhone 17 Pro Max, and the Android flagship.
         </p>
       </div>
 
       {/* 3D Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
         <PrizeCard3D
           rank={1}
           title="Honda CD 70 2027 Model"
@@ -73,7 +73,7 @@ export default function PrizesPage() {
       </div>
 
       {/* Detailed Technical Specs Comparison */}
-      <div className="bg-slate-900/80 rounded-3xl p-8 border border-white/10 space-y-6">
+      <div className="bg-slate-900/80 rounded-3xl p-6 sm:p-8 border border-white/10 space-y-6">
         <h3 className="text-xl font-extrabold text-white">Prize Eligibility &amp; Claim Procedures</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs text-slate-300">
           <div className="p-4 bg-slate-950/60 rounded-2xl border border-white/5 space-y-2">

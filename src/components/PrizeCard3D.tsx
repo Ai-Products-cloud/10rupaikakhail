@@ -347,36 +347,87 @@ export default function PrizeCard3D({
       modelGroup.add(androidGroup);
     }
 
-    // Drag controls
+    // Drag & Touch controls
     let isDragging = false;
-    let previousMousePosition = { x: 0, y: 0 };
+    let previousPosition = { x: 0, y: 0 };
 
-    const onMouseDown = (e: MouseEvent) => {
+    const onPointerDown = (clientX: number, clientY: number) => {
       isDragging = true;
       setIsRotating(false);
-      previousMousePosition = { x: e.clientX, y: e.clientY };
+      previousPosition = { x: clientX, y: clientY };
+    };
+
+    const onPointerMove = (clientX: number, clientY: number, preventScroll = false) => {
+      if (!isDragging) return;
+      const deltaX = clientX - previousPosition.x;
+      const deltaY = clientY - previousPosition.y;
+
+      modelGroup.rotation.y += deltaX * 0.012;
+      modelGroup.rotation.x += deltaY * 0.012;
+
+      previousPosition = { x: clientX, y: clientY };
+    };
+
+    const onPointerUp = () => {
+      if (isDragging) {
+        isDragging = false;
+        setTimeout(() => setIsRotating(true), 2000);
+      }
+    };
+
+    // Mouse event handlers
+    const onMouseDown = (e: MouseEvent) => {
+      onPointerDown(e.clientX, e.clientY);
     };
 
     const onMouseMove = (e: MouseEvent) => {
-      if (!isDragging) return;
-      const deltaX = e.clientX - previousMousePosition.x;
-      const deltaY = e.clientY - previousMousePosition.y;
-
-      modelGroup.rotation.y += deltaX * 0.01;
-      modelGroup.rotation.x += deltaY * 0.01;
-
-      previousMousePosition = { x: e.clientX, y: e.clientY };
+      onPointerMove(e.clientX, e.clientY);
     };
 
     const onMouseUp = () => {
-      isDragging = false;
-      setTimeout(() => setIsRotating(true), 1500);
+      onPointerUp();
+    };
+
+    // Touch event handlers for mobile
+    const onTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 1) {
+        onPointerDown(e.touches[0].clientX, e.touches[0].clientY);
+      }
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (!isDragging || e.touches.length !== 1) return;
+      onPointerMove(e.touches[0].clientX, e.touches[0].clientY);
+      if (e.cancelable) e.preventDefault();
+    };
+
+    const onTouchEnd = () => {
+      onPointerUp();
     };
 
     const domElement = renderer.domElement;
+    domElement.style.touchAction = 'none';
+
     domElement.addEventListener('mousedown', onMouseDown);
     window.addEventListener('mousemove', onMouseMove);
     window.addEventListener('mouseup', onMouseUp);
+
+    domElement.addEventListener('touchstart', onTouchStart, { passive: false });
+    window.addEventListener('touchmove', onTouchMove, { passive: false });
+    window.addEventListener('touchend', onTouchEnd);
+
+    // Responsive Canvas Resize Observer (handles mobile portrait/landscape rotation & breakpoints)
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width: newWidth, height: newHeight } = entry.contentRect;
+        if (newWidth > 0 && newHeight > 0) {
+          camera.aspect = newWidth / newHeight;
+          camera.updateProjectionMatrix();
+          renderer.setSize(newWidth, newHeight);
+        }
+      }
+    });
+    resizeObserver.observe(container);
 
     // Animation Loop
     let animationFrameId: number;
@@ -401,6 +452,12 @@ export default function PrizeCard3D({
       domElement.removeEventListener('mousedown', onMouseDown);
       window.removeEventListener('mousemove', onMouseMove);
       window.removeEventListener('mouseup', onMouseUp);
+
+      domElement.removeEventListener('touchstart', onTouchStart);
+      window.removeEventListener('touchmove', onTouchMove);
+      window.removeEventListener('touchend', onTouchEnd);
+
+      resizeObserver.disconnect();
       renderer.dispose();
     };
   }, [viewMode, modelType, isRotating]);
@@ -419,9 +476,9 @@ export default function PrizeCard3D({
       onMouseLeave={() => setIsHovered(false)}
     >
       {/* Top Banner with Rank Badge & View Mode Switcher */}
-      <div className="p-4 pb-2 flex items-center justify-between z-10 gap-2">
-        <div className={`px-3 py-1 rounded-full text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-md ${rankBadgeColors}`}>
-          <Trophy className="w-3.5 h-3.5" />
+      <div className="p-3.5 sm:p-4 pb-2 flex items-center justify-between z-10 gap-2 flex-wrap">
+        <div className={`px-2.5 sm:px-3 py-1 rounded-full text-[11px] sm:text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-md ${rankBadgeColors}`}>
+          <Trophy className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
           <span>{rank === 1 ? '1st Prize' : rank === 2 ? '2nd Prize' : '3rd Prize'}</span>
         </div>
 
@@ -430,7 +487,7 @@ export default function PrizeCard3D({
           <button
             type="button"
             onClick={() => setViewMode('image')}
-            className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition ${
+            className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-bold flex items-center gap-1 transition ${
               viewMode === 'image'
                 ? 'bg-emerald-600 text-white shadow'
                 : 'text-slate-400 hover:text-white'
@@ -442,7 +499,7 @@ export default function PrizeCard3D({
           <button
             type="button"
             onClick={() => setViewMode('3d')}
-            className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition ${
+            className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-bold flex items-center gap-1 transition ${
               viewMode === '3d'
                 ? 'bg-amber-500 text-slate-950 shadow'
                 : 'text-slate-400 hover:text-white'
@@ -455,12 +512,12 @@ export default function PrizeCard3D({
       </div>
 
       {/* Main Visual Display (Image or 3D Canvas) */}
-      <div className="relative w-full h-[250px] flex items-center justify-center overflow-hidden bg-gradient-to-b from-slate-950/60 to-slate-900/40 p-4">
+      <div className="relative w-full h-[220px] sm:h-[250px] flex items-center justify-center overflow-hidden bg-gradient-to-b from-slate-950/60 to-slate-900/40 p-3 sm:p-4">
         {viewMode === 'image' ? (
           /* High-Res Product Image */
           <div className="relative w-full h-full flex items-center justify-center group/img">
             {/* Subtle glow circle backdrop */}
-            <div className="absolute inset-0 m-auto w-40 h-40 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
+            <div className="absolute inset-0 m-auto w-36 sm:w-40 h-36 sm:h-40 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
             <img
               src={imgError ? localFallback : resolvedImage}
               alt={title}
@@ -475,16 +532,16 @@ export default function PrizeCard3D({
           </div>
         ) : (
           /* Interactive 3D Canvas Container */
-          <div className="relative w-full h-full flex items-center justify-center cursor-grab active:cursor-grabbing group/canvas">
-            <div ref={containerRef} className="w-full h-full" />
-            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 pointer-events-none px-3 py-1 rounded-full bg-slate-950/80 backdrop-blur-md border border-white/10 text-[11px] text-slate-400 flex items-center gap-1.5 opacity-80 group-hover/canvas:opacity-100 transition whitespace-nowrap">
+          <div className="relative w-full h-full flex items-center justify-center cursor-grab active:cursor-grabbing group/canvas touch-none">
+            <div ref={containerRef} className="w-full h-full touch-none" />
+            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 pointer-events-none px-3 py-1 rounded-full bg-slate-950/90 backdrop-blur-md border border-white/10 text-[10px] sm:text-[11px] text-slate-300 flex items-center gap-1.5 opacity-90 group-hover/canvas:opacity-100 transition whitespace-nowrap shadow-md">
               <Eye className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Drag to Rotate 360°</span>
+              <span>Drag or Swipe to Rotate 360°</span>
             </div>
             <button
               onClick={() => setIsRotating(!isRotating)}
               title="Toggle auto rotation"
-              className="absolute top-2 right-2 p-1.5 rounded-lg bg-slate-950/80 text-slate-400 hover:text-emerald-400 border border-white/10 transition"
+              className="absolute top-2 right-2 p-2 rounded-xl bg-slate-950/80 text-slate-300 hover:text-emerald-400 border border-white/10 transition active:scale-95"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isRotating ? 'animate-spin text-emerald-400' : ''}`} />
             </button>
@@ -493,18 +550,18 @@ export default function PrizeCard3D({
       </div>
 
       {/* Content Body */}
-      <div className="p-6 pt-3 flex-1 flex flex-col justify-between">
+      <div className="p-4 sm:p-6 pt-2 sm:pt-3 flex-1 flex flex-col justify-between">
         <div>
           <div className="flex items-baseline justify-between gap-2 mb-1">
-            <h3 className="text-xl font-extrabold text-white tracking-tight">{title}</h3>
-            <span className="text-sm font-semibold text-amber-400 whitespace-nowrap">{estimatedValue}</span>
+            <h3 className="text-lg sm:text-xl font-extrabold text-white tracking-tight">{title}</h3>
+            <span className="text-xs sm:text-sm font-bold text-amber-400 whitespace-nowrap">{estimatedValue}</span>
           </div>
-          <p className="text-xs text-emerald-400 font-medium mb-3">{tagline}</p>
-          <p className="text-sm text-slate-300 leading-relaxed mb-4">{description}</p>
+          <p className="text-[11px] sm:text-xs text-emerald-400 font-medium mb-2.5 sm:mb-3">{tagline}</p>
+          <p className="text-xs sm:text-sm text-slate-300 leading-relaxed mb-4">{description}</p>
 
-          <div className="bg-slate-950/50 rounded-2xl p-3.5 border border-white/5 space-y-1.5 mb-5 text-xs text-slate-400">
-            <div className="flex items-center gap-2">
-              <CheckCircle className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+          <div className="bg-slate-950/50 rounded-2xl p-3 sm:p-3.5 border border-white/5 space-y-1.5 mb-5 text-[11px] sm:text-xs text-slate-400">
+            <div className="flex items-start sm:items-center gap-2">
+              <CheckCircle className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0 mt-0.5 sm:mt-0" />
               <span>{eligibility}</span>
             </div>
             <div className="flex items-center gap-2">
@@ -518,7 +575,7 @@ export default function PrizeCard3D({
         <div>
           <button
             onClick={onEnterClick}
-            className="w-full py-3.5 px-4 rounded-xl font-bold text-sm bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white shadow-lg shadow-emerald-900/30 flex items-center justify-center gap-2 transition active:scale-[0.98]"
+            className="w-full py-3.5 sm:py-4 px-4 min-h-[48px] rounded-xl font-bold text-sm bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white shadow-lg shadow-emerald-900/30 flex items-center justify-center gap-2 transition active:scale-[0.98] cursor-pointer"
           >
             <Sparkles className="w-4 h-4 text-amber-300" />
             <span>Participate for PKR 10</span>

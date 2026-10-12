@@ -96,8 +96,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
           </div>
 
-          {/* Navigation Links */}
-          <nav className="bg-slate-900/80 border border-white/5 rounded-3xl p-3 shadow-xl space-y-1">
+          {/* Desktop Navigation Links */}
+          <nav className="hidden lg:block bg-slate-900/80 border border-white/5 rounded-3xl p-3 shadow-xl space-y-1">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.href;
@@ -132,8 +132,39 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </nav>
         </aside>
 
+        {/* Mobile Horizontal Scrollable Tab Bar (lg:hidden) */}
+        <div className="lg:hidden col-span-1 -mt-4">
+          <div className="overflow-x-auto flex items-center gap-2 pb-2 scrollbar-none -mx-4 px-4">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = pathname === item.href;
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition flex-shrink-0 ${
+                    isActive
+                      ? 'bg-emerald-600 text-white shadow-md shadow-emerald-950'
+                      : 'bg-slate-900/90 text-slate-300 border border-white/10 hover:text-white'
+                  }`}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  <span>{item.name}</span>
+                </Link>
+              );
+            })}
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-bold text-rose-400 bg-rose-950/20 border border-rose-900/30 whitespace-nowrap flex-shrink-0"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>Log Out</span>
+            </button>
+          </div>
+        </div>
+
         {/* Main Dashboard Content Area */}
-        <section className="lg:col-span-3">{children}</section>
+        <section className="lg:col-span-3 min-w-0">{children}</section>
       </div>
     </div>
   );
