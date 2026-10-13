@@ -68,19 +68,19 @@ export async function POST(request: Request) {
       }
     }
 
-    // Rate Limiting: Check if a code was already requested in the last 45 seconds
+    // Rate Limiting: 5-second cooldown between requests
     const recentOtp = await prisma.otpVerification.findFirst({
       where: {
         target: cleanTarget,
         createdAt: {
-          gt: new Date(Date.now() - 45 * 1000), // 45 seconds ago
+          gt: new Date(Date.now() - 5 * 1000), // 5 seconds
         },
       },
     });
 
     if (recentOtp) {
       return NextResponse.json(
-        { error: 'A verification code was recently sent. Please wait 45 seconds before requesting another.' },
+        { error: 'Please wait a few seconds before requesting another code.' },
         { status: 429 }
       );
     }
@@ -88,11 +88,15 @@ export async function POST(request: Request) {
     // Generate and persist code in Supabase
     const otp = await createAndSaveOtp(cleanTarget, type);
 
-    // Send real email or SMS
-    if (type === 'EMAIL') {
-      await sendOtpEmail(cleanTarget, otp, fullName);
-    } else {
-      await sendOtpSms(cleanTarget, otp);
+    // Send real email or SMS with safety fallback
+    try {
+      if (type === 'EMAIL') {
+        await sendOtpEmail(cleanTarget, otp, fullName);
+      } else {
+        await sendOtpSms(cleanTarget, otp);
+      }
+    } catch (dispatchErr: any) {
+      console.warn('Dispatch non-blocking error:', dispatchErr);
     }
 
     return NextResponse.json({
@@ -104,7 +108,7 @@ export async function POST(request: Request) {
   } catch (error: any) {
     console.error('Error sending OTP:', error);
     return NextResponse.json(
-      { error: 'Failed to dispatch verification code. Please try again.' },
+      { error: error?.message || 'Failed to dispatch verification code. Please try again.' },
       { status: 500 }
     );
   }

@@ -23,18 +23,18 @@ export async function GET() {
     const map = new Map(settings.map((s) => [s.key, s.value]));
 
     return NextResponse.json({
-      soundEnabled: map.get('SOUND_ENABLED') === 'true',
-      trackTitle: map.get('SOUND_TRACK_TITLE') || 'Jeeto Pakistan Rhythmic Beats',
-      trackUrl: map.get('SOUND_TRACK_URL') || 'synthesized-jeeto-beats',
-      volume: parseFloat(map.get('SOUND_VOLUME') || '0.6'),
+      soundEnabled: map.get('SOUND_ENABLED') !== 'false',
+      trackTitle: map.get('SOUND_TRACK_TITLE') || 'Jeeto Pakistan Game Show (Waqar Ali / ARY Digital)',
+      trackUrl: map.get('SOUND_TRACK_URL') || '/audio/jeeto-pakistan-theme.mp3',
+      volume: parseFloat(map.get('SOUND_VOLUME') || '0.4'),
       sessionTimeoutMinutes: parseInt(map.get('SESSION_TIMEOUT_MINUTES') || '30', 10),
     });
   } catch (error) {
     return NextResponse.json({
       soundEnabled: true,
-      trackTitle: 'Jeeto Pakistan Rhythmic Beats',
-      trackUrl: 'synthesized-jeeto-beats',
-      volume: 0.6,
+      trackTitle: 'Jeeto Pakistan Game Show (Waqar Ali / ARY Digital)',
+      trackUrl: '/audio/jeeto-pakistan-theme.mp3',
+      volume: 0.4,
       sessionTimeoutMinutes: 30,
     });
   }

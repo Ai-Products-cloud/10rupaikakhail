@@ -17,24 +17,26 @@ import {
   Sparkles,
   Link as LinkIcon
 } from 'lucide-react';
-import { jeetoPakistanBeats } from '@/lib/audioEngine';
 
 export default function AdminSettingsPage() {
   const [soundEnabled, setSoundEnabled] = useState(true);
-  const [trackTitle, setTrackTitle] = useState('Jeeto Pakistan Rhythmic Beats');
-  const [trackUrl, setTrackUrl] = useState('synthesized-jeeto-beats');
-  const [volume, setVolume] = useState(0.6);
+  const [trackTitle, setTrackTitle] = useState('Jeeto Pakistan Game Show (Waqar Ali / ARY Digital)');
+  const [trackUrl, setTrackUrl] = useState('/audio/jeeto-pakistan-theme.mp3');
+  const [volume, setVolume] = useState(0.4);
   const [sessionTimeoutMinutes, setSessionTimeoutMinutes] = useState(30);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [isPlayingPreview, setIsPlayingPreview] = useState(false);
+  const previewAudioRef = React.useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     fetchSettings();
     return () => {
-      jeetoPakistanBeats.stop();
+      if (previewAudioRef.current) {
+        previewAudioRef.current.pause();
+      }
     };
   }, []);
 
@@ -91,26 +93,35 @@ export default function AdminSettingsPage() {
 
   const togglePreview = () => {
     if (isPlayingPreview) {
-      jeetoPakistanBeats.stop();
+      if (previewAudioRef.current) {
+        previewAudioRef.current.pause();
+      }
       setIsPlayingPreview(false);
     } else {
-      jeetoPakistanBeats.setVolume(volume);
-      jeetoPakistanBeats.start();
-      setIsPlayingPreview(true);
+      if (!previewAudioRef.current) {
+        previewAudioRef.current = new Audio('/audio/jeeto-pakistan-theme.mp3');
+        previewAudioRef.current.loop = true;
+      }
+      previewAudioRef.current.volume = volume;
+      previewAudioRef.current.play().then(() => {
+        setIsPlayingPreview(true);
+      }).catch(() => {
+        setIsPlayingPreview(false);
+      });
     }
   };
 
   const handleVolumeChange = (newVol: number) => {
     setVolume(newVol);
-    if (isPlayingPreview) {
-      jeetoPakistanBeats.setVolume(newVol);
+    if (previewAudioRef.current) {
+      previewAudioRef.current.volume = newVol;
     }
   };
 
   const selectPreset = (type: 'jeeto' | 'custom') => {
     if (type === 'jeeto') {
-      setTrackTitle('Jeeto Pakistan Rhythmic Beats');
-      setTrackUrl('synthesized-jeeto-beats');
+      setTrackTitle('Jeeto Pakistan Game Show (Waqar Ali / ARY Digital)');
+      setTrackUrl('/audio/jeeto-pakistan-theme.mp3');
     } else {
       setTrackTitle('Custom Game Show Track');
       setTrackUrl('');
