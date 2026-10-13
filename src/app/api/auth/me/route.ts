@@ -3,7 +3,9 @@ import { getSessionUser } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import { getReferralLeaderboard } from '@/lib/referral';
 
-export async function GET() {
+export const dynamic = 'force-dynamic';
+
+export async function GET(request: Request) {
   try {
     const user = await getSessionUser();
     if (!user) {
@@ -19,6 +21,7 @@ export async function GET() {
             id: true,
             fullName: true,
             phone: true,
+            email: true,
             createdAt: true,
           },
         },
@@ -65,8 +68,21 @@ export async function GET() {
     const userRankItem = leaderboard.items.find((item) => item.userId === user.id);
     const currentRank = userRankItem ? userRankItem.rank : null;
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-    const referralLink = `${appUrl}/register?ref=${user.referralCode}`;
+    // Dynamically resolve app domain/Vercel URL from incoming request
+    const host = request.headers.get('x-forwarded-host') || request.headers.get('host');
+    const proto =
+      request.headers.get('x-forwarded-proto') ||
+      (host?.includes('localhost') ? 'http' : 'https');
+    
+    let domainUrl = host ? `${proto}://${host}` : '';
+    if (!domainUrl && process.env.VERCEL_URL) {
+      domainUrl = `https://${process.env.VERCEL_URL}`;
+    }
+    if (!domainUrl && process.env.NEXT_PUBLIC_APP_URL) {
+      domainUrl = process.env.NEXT_PUBLIC_APP_URL;
+    }
+
+    const referralLink = `${domainUrl}/register?ref=${user.referralCode}`;
 
     return NextResponse.json({
       user,

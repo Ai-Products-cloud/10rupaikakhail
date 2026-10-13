@@ -199,7 +199,7 @@ export async function reverseReferralBonus({
  * Privacy-preserving name formatter: e.g. "Muhammad Ali Khan" -> "Muhammad A."
  * or "03012345678" -> "0301-***5678"
  */
-export function formatMaskedDisplayName(fullName: string, phone?: string): string {
+export function formatMaskedDisplayName(fullName: string, phone?: string | null): string {
   const parts = fullName.trim().split(/\s+/);
   if (parts.length > 1) {
     return `${parts[0]} ${parts[parts.length - 1][0]}.`;

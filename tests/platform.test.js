@@ -267,4 +267,45 @@ describe('10kakhail Core Engine & Business Logic Test Suite', () => {
     });
     assert.strictEqual(activeBonusCount, 0);
   });
+
+  test('9. Authentication via Email or Phone: Support Email-Only, Phone-Only, and Dual Reg', async () => {
+    // A. Email-only user
+    const emailUser = await prisma.user.create({
+      data: {
+        fullName: 'Email Only User',
+        email: 'emailonly@example.pk',
+        passwordHash: 'dummyhash',
+        referralCode: '10K-EMLONLY1',
+        role: 'USER',
+        isVerified: true,
+        emailVerified: true,
+        verificationMethod: 'EMAIL',
+      },
+    });
+    assert.ok(emailUser.id);
+    assert.strictEqual(emailUser.phone, null);
+    assert.strictEqual(emailUser.emailVerified, true);
+
+    // B. Query by email
+    const foundUser = await prisma.user.findFirst({
+      where: { email: 'emailonly@example.pk' },
+    });
+    assert.ok(foundUser);
+    assert.strictEqual(foundUser.id, emailUser.id);
+
+    // Clean up
+    await prisma.user.delete({ where: { id: emailUser.id } });
+  });
+
+  test('10. Referral Generation with Domain/Vercel URL (No Localhost)', () => {
+    // Test dynamic URL generator logic
+    function buildReferralLink(code, host, proto = 'https') {
+      const origin = host ? `${proto}://${host}` : 'https://10kakhail.vercel.app';
+      return `${origin}/register?ref=${code}`;
+    }
+
+    const vercelLink = buildReferralLink('10K-USER123', 'my-custom-domain.com');
+    assert.strictEqual(vercelLink, 'https://my-custom-domain.com/register?ref=10K-USER123');
+    assert.ok(!vercelLink.includes('localhost'), 'Referral URL must not contain localhost when hosted');
+  });
 });

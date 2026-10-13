@@ -7,7 +7,8 @@ const JWT_SECRET = process.env.JWT_SECRET || '10kakhail-super-secure-production-
 
 export interface TokenPayload {
   userId: string;
-  phone: string;
+  phone?: string | null;
+  email?: string | null;
   role: string;
   fullName: string;
 }
@@ -36,7 +37,8 @@ export function verifyToken(token: string): TokenPayload | null {
 /**
  * Normalizes Pakistani phone numbers to standard format 03XXXXXXXXX
  */
-export function normalizePakistaniPhone(phone: string): string {
+export function normalizePakistaniPhone(phone?: string | null): string {
+  if (!phone) return '';
   const cleaned = phone.replace(/[\s\-\(\)]/g, '');
   if (cleaned.startsWith('+92')) {
     return '0' + cleaned.slice(3);
@@ -50,9 +52,18 @@ export function normalizePakistaniPhone(phone: string): string {
 /**
  * Validates Pakistani mobile numbers (0300 to 0349 series, 11 digits)
  */
-export function isValidPakistaniPhone(phone: string): boolean {
+export function isValidPakistaniPhone(phone?: string | null): boolean {
+  if (!phone) return false;
   const normalized = normalizePakistaniPhone(phone);
   return /^03[0-9]{9}$/.test(normalized);
+}
+
+/**
+ * Validates email addresses
+ */
+export function isValidEmail(email?: string | null): boolean {
+  if (!email) return false;
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 }
 
 /**
@@ -83,6 +94,9 @@ export async function getSessionUser() {
         referralCode: true,
         role: true,
         isVerified: true,
+        phoneVerified: true,
+        emailVerified: true,
+        verificationMethod: true,
         createdAt: true,
       },
     });

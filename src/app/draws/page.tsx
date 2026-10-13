@@ -97,7 +97,7 @@ export default function DrawsPage() {
                   href="/prizes"
                   className="py-3.5 px-5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold text-center transition"
                 >
-                  View 3D Models
+                  View Prizes
                 </Link>
               </div>
             </div>

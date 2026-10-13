@@ -134,34 +134,27 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* Demo Credentials Quick-Fill Assistant */}
+      {/* Live Admin Credentials Quick-Fill */}
       <div className="bg-slate-950/80 border border-white/10 rounded-2xl p-4 text-xs space-y-3">
         <span className="text-amber-400 font-bold uppercase tracking-wider block text-[10px]">
-          Demo Testing Quick-Fill Credentials:
+          Live Administrator Credentials:
         </span>
-        <div className="grid grid-cols-2 gap-2">
+        <div>
           <button
             type="button"
             onClick={() => handleQuickFill('03001234567', 'AdminPassword123!')}
-            className="p-2.5 rounded-xl bg-slate-900 border border-amber-500/30 hover:border-amber-500 text-left transition"
+            className="w-full p-2.5 rounded-xl bg-slate-900 border border-amber-500/30 hover:border-amber-500 text-left transition flex items-center justify-between"
           >
-            <div className="flex items-center gap-1.5 text-amber-300 font-bold text-[11px]">
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span>Admin Account</span>
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-amber-400" />
+              <div>
+                <span className="text-amber-300 font-bold text-xs block">Chief Administrator</span>
+                <span className="text-[10px] text-slate-400 font-mono">03001234567 / admin@10kakhail.pk</span>
+              </div>
             </div>
-            <span className="text-[10px] text-slate-400 block font-mono">03001234567</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleQuickFill('03019876543', 'UserPassword123!')}
-            className="p-2.5 rounded-xl bg-slate-900 border border-emerald-500/30 hover:border-emerald-500 text-left transition"
-          >
-            <div className="flex items-center gap-1.5 text-emerald-300 font-bold text-[11px]">
-              <UserCheck className="w-3.5 h-3.5" />
-              <span>Hamza (#1 Leader)</span>
-            </div>
-            <span className="text-[10px] text-slate-400 block font-mono">03019876543</span>
+            <span className="text-[11px] text-amber-400 font-semibold bg-amber-500/10 px-2 py-1 rounded-lg border border-amber-500/20">
+              Quick Fill
+            </span>
           </button>
         </div>
       </div>

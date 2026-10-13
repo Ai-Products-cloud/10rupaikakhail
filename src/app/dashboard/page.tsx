@@ -22,7 +22,12 @@ export default function DashboardOverviewPage() {
   const [copied, setCopied] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  const [currentOrigin, setCurrentOrigin] = useState('');
+
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setCurrentOrigin(window.location.origin);
+    }
     fetch('/api/auth/me')
       .then((res) => (res.ok ? res.json() : null))
       .then((d) => {
@@ -31,18 +36,22 @@ export default function DashboardOverviewPage() {
       .catch(() => {});
   }, []);
 
+  const referralUrl = data?.user?.referralCode
+    ? `${currentOrigin || (typeof window !== 'undefined' ? window.location.origin : '')}/register?ref=${data.user.referralCode}`
+    : data?.referralLink || '';
+
   const handleCopy = () => {
-    if (data?.referralLink) {
-      navigator.clipboard.writeText(data.referralLink);
+    if (referralUrl) {
+      navigator.clipboard.writeText(referralUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
   };
 
   const handleWhatsAppShare = () => {
-    if (data?.referralLink) {
+    if (referralUrl) {
       const text = encodeURIComponent(
-        `Join me on 10kakhail! Enter the Grand Mega Draw for just PKR 10 and win Honda CD 70 2027 or iPhone 17 Pro Max! Register here: ${data.referralLink}`
+        `Join me on 10kakhail! Enter the Grand Mega Draw for just PKR 10 and win Honda CD 70 2027 or iPhone 17 Pro Max! Register here: ${referralUrl}`
       );
       window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
     }
@@ -142,7 +151,7 @@ export default function DashboardOverviewPage() {
           <input
             type="text"
             readOnly
-            value={data?.referralLink || ''}
+            value={referralUrl}
             className="flex-1 bg-slate-950 border border-white/10 rounded-2xl px-4 py-3 text-xs text-emerald-400 font-mono select-all focus:outline-none"
           />
           <button

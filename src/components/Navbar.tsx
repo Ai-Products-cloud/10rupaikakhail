@@ -52,7 +52,7 @@ export default function Navbar() {
     { name: 'Home', href: '/' },
     { name: 'How It Works', href: '/how-it-works' },
     { name: 'Available Draws', href: '/draws' },
-    { name: 'Prizes (3D)', href: '/prizes' },
+    { name: 'Prize', href: '/prizes' },
     { name: 'Leaderboard', href: '/leaderboard' },
     { name: 'Winners', href: '/winners' },
     { name: 'FAQ', href: '/faq' },

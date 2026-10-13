@@ -18,15 +18,21 @@ export async function POST(request: Request) {
       );
     }
 
-    const normalizedPhone = normalizePakistaniPhone(loginIdentifier);
+    const trimmedIdentifier = loginIdentifier.trim();
+    const isEmail = trimmedIdentifier.includes('@');
+
+    const orConditions: any[] = [{ email: trimmedIdentifier.toLowerCase() }];
+    if (!isEmail) {
+      const normalizedPhone = normalizePakistaniPhone(trimmedIdentifier);
+      if (normalizedPhone) {
+        orConditions.push({ phone: normalizedPhone });
+      }
+    }
 
     // Find by phone or email
     const user = await prisma.user.findFirst({
       where: {
-        OR: [
-          { phone: normalizedPhone },
-          { email: loginIdentifier.toLowerCase().trim() },
-        ],
+        OR: orConditions,
       },
     });
 
@@ -48,6 +54,7 @@ export async function POST(request: Request) {
     const token = generateToken({
       userId: user.id,
       phone: user.phone,
+      email: user.email,
       role: user.role,
       fullName: user.fullName,
     });
@@ -62,6 +69,8 @@ export async function POST(request: Request) {
         referralCode: user.referralCode,
         role: user.role,
         isVerified: user.isVerified,
+        phoneVerified: user.phoneVerified,
+        emailVerified: user.emailVerified,
       },
     });
 

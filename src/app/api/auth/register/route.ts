@@ -5,6 +5,7 @@ import {
   generateToken,
   isValidPakistaniPhone,
   normalizePakistaniPhone,
+  isValidEmail,
   generateReferralCode,
 } from '@/lib/auth';
 import { attachReferral } from '@/lib/referral';
@@ -12,12 +13,45 @@ import { attachReferral } from '@/lib/referral';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { fullName, phone, email, password, confirmPassword, termsAccepted, refCode } = body;
+    const {
+      fullName,
+      phone,
+      email,
+      password,
+      confirmPassword,
+      termsAccepted,
+      refCode,
+      verificationMethod = 'PHONE',
+    } = body;
 
     // 1. Validation
-    if (!fullName || !phone || !password) {
+    if (!fullName || !password) {
       return NextResponse.json(
-        { error: 'Please provide full name, mobile number, and password.' },
+        { error: 'Please provide your full legal name and password.' },
+        { status: 400 }
+      );
+    }
+
+    const trimmedPhone = phone ? phone.trim() : '';
+    const trimmedEmail = email ? email.trim().toLowerCase() : '';
+
+    if (!trimmedPhone && !trimmedEmail) {
+      return NextResponse.json(
+        { error: 'Please provide either a Pakistani mobile number or an email address to register.' },
+        { status: 400 }
+      );
+    }
+
+    if (verificationMethod === 'PHONE' && !trimmedPhone) {
+      return NextResponse.json(
+        { error: 'Please provide a valid Pakistani mobile number to verify via SMS OTP.' },
+        { status: 400 }
+      );
+    }
+
+    if (verificationMethod === 'EMAIL' && !trimmedEmail) {
+      return NextResponse.json(
+        { error: 'Please provide an email address to verify via Email.' },
         { status: 400 }
       );
     }
@@ -43,19 +77,32 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!isValidPakistaniPhone(phone)) {
+    let normalizedPhone: string | null = null;
+    if (trimmedPhone) {
+      if (!isValidPakistaniPhone(trimmedPhone)) {
+        return NextResponse.json(
+          { error: 'Please enter a valid Pakistani mobile number (e.g. 03001234567 or +923001234567).' },
+          { status: 400 }
+        );
+      }
+      normalizedPhone = normalizePakistaniPhone(trimmedPhone);
+    }
+
+    if (trimmedEmail && !isValidEmail(trimmedEmail)) {
       return NextResponse.json(
-        { error: 'Please enter a valid Pakistani mobile number (e.g., 0300-1234567 or 03211234567).' },
+        { error: 'Please enter a valid email address (e.g. name@example.com).' },
         { status: 400 }
       );
     }
 
-    const normalizedPhone = normalizePakistaniPhone(phone);
+    // 2. Check existing user by phone or email
+    const orConditions = [];
+    if (normalizedPhone) orConditions.push({ phone: normalizedPhone });
+    if (trimmedEmail) orConditions.push({ email: trimmedEmail });
 
-    // 2. Check existing user
     const existingUser = await prisma.user.findFirst({
       where: {
-        OR: [{ phone: normalizedPhone }, ...(email ? [{ email }] : [])],
+        OR: orConditions,
       },
     });
 
@@ -79,15 +126,21 @@ export async function POST(request: Request) {
       attempts++;
     }
 
+    const isPhoneVerified = verificationMethod === 'PHONE';
+    const isEmailVerified = verificationMethod === 'EMAIL';
+
     // 4. Create user
     const newUser = await prisma.user.create({
       data: {
         fullName: fullName.trim(),
         phone: normalizedPhone,
-        email: email?.trim() || null,
+        email: trimmedEmail || null,
         passwordHash,
         referralCode,
-        isVerified: true, // Demo accounts auto-verified
+        isVerified: true,
+        verificationMethod,
+        phoneVerified: isPhoneVerified,
+        emailVerified: isEmailVerified,
         role: 'USER',
       },
     });
@@ -104,6 +157,7 @@ export async function POST(request: Request) {
     const token = generateToken({
       userId: newUser.id,
       phone: newUser.phone,
+      email: newUser.email,
       role: newUser.role,
       fullName: newUser.fullName,
     });
@@ -118,6 +172,9 @@ export async function POST(request: Request) {
         referralCode: newUser.referralCode,
         role: newUser.role,
         isVerified: newUser.isVerified,
+        phoneVerified: newUser.phoneVerified,
+        emailVerified: newUser.emailVerified,
+        verificationMethod: newUser.verificationMethod,
       },
     });
 

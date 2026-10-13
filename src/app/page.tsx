@@ -29,6 +29,15 @@ export default function HomePage() {
   const [faqOpen, setFaqOpen] = useState<number | null>(null);
 
   useEffect(() => {
+    // Capture referral code if present in URL
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const ref = params.get('ref');
+      if (ref) {
+        localStorage.setItem('refCode', ref.toUpperCase());
+      }
+    }
+
     // Fetch active draw & prizes
     fetch('/api/draws')
       .then((res) => (res.ok ? res.json() : null))
@@ -148,18 +157,18 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ----------------- SECTION 2: DEDICATED 3D PRIZES ----------------- */}
+      {/* ----------------- SECTION 2: DEDICATED PRIZES ----------------- */}
       <section className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto" id="prizes">
         <div className="text-center max-w-2xl mx-auto mb-8 sm:mb-12 space-y-2.5 sm:space-y-3">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold uppercase">
             <Trophy className="w-3.5 h-3.5 text-amber-400" />
-            <span>Interactive 3D Showcase</span>
+            <span>Grand Draw Prizes</span>
           </div>
           <h2 className="text-2xl sm:text-4xl font-extrabold text-white">
             Exclusive Mega Prizes for Draw 2027
           </h2>
           <p className="text-xs sm:text-sm text-slate-400 px-2">
-            Rotate each prize 360° to inspect details. Winners qualify through verified participation and referral rankings.
+            Inspect genuine prize allocations for Draw 2027. Winners qualify through verified participation and referral rankings.
           </p>
         </div>
 

@@ -4,9 +4,25 @@ const bcrypt = require('bcryptjs');
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('Seeding 10kakhail database...');
+  console.log('Clearing dummy data and resetting to live system state (Admin only)...');
 
-  // 1. Compliance & Legal Settings
+  // 1. Clean out all dummy entries, payments, referrals, winners, and non-admin users
+  await prisma.winner.deleteMany({});
+  await prisma.drawEntry.deleteMany({});
+  await prisma.refund.deleteMany({});
+  await prisma.payment.deleteMany({});
+  await prisma.referral.deleteMany({});
+  await prisma.auditLog.deleteMany({});
+
+  // Remove all users except admin (or clean all non-admin users)
+  await prisma.user.deleteMany({
+    where: {
+      phone: { not: '03001234567' },
+      email: { not: 'admin@10kakhail.pk' },
+    },
+  });
+
+  // 2. Compliance & Legal Settings
   const settings = [
     {
       key: 'REAL_MONEY_PAYMENTS_ENABLED',
@@ -60,11 +76,17 @@ async function main() {
     });
   }
 
-  // 2. Create Admin Account
+  // 3. Create / Ensure Admin Account
   const adminPasswordHash = await bcrypt.hash('AdminPassword123!', 10);
   const admin = await prisma.user.upsert({
     where: { phone: '03001234567' },
-    update: {},
+    update: {
+      passwordHash: adminPasswordHash,
+      role: 'ADMIN',
+      isVerified: true,
+      phoneVerified: true,
+      emailVerified: true,
+    },
     create: {
       fullName: 'Chief Administrator',
       phone: '03001234567',
@@ -73,233 +95,124 @@ async function main() {
       referralCode: '10K-ADMIN786',
       role: 'ADMIN',
       isVerified: true,
+      phoneVerified: true,
+      emailVerified: true,
+      verificationMethod: 'PHONE',
     },
   });
-  console.log('Admin created:', admin.email);
+  console.log('Live Admin verified:', admin.email, '(', admin.phone, ')');
 
-  // 3. Create Grand Draw 2027
+  // 4. Create / Ensure Grand Pakistan Mega Draw 2027
   const drawEndDate = new Date('2027-03-23T23:59:59Z');
-  const draw = await prisma.draw.upsert({
+  
+  // Clear any existing prizes on draw to rebuild cleanly
+  const existingDraw = await prisma.draw.findUnique({
     where: { slug: 'mega-draw-2027' },
-    update: {},
-    create: {
-      title: 'Grand Pakistan Mega Draw 2027',
-      slug: 'mega-draw-2027',
-      description:
-        'Official 2027 Mega Draw for Pakistan. Win a brand-new Honda CD 70 2027 Model, iPhone 17 Pro Max, or Android Smartphone for just PKR 10.',
-      entryFeePKR: 10,
-      endDate: drawEndDate,
-      status: 'ACTIVE',
-      winnerSelectionMethod: 'RANKING',
-      prizes: {
-        create: [
-          {
-            rank: 1,
-            title: 'Honda CD 70 2027 Model',
-            tagline: 'First Prize • Brand New 2027 Pakistani Motorcycle',
-            description:
-              'The pride of Pakistan with 2027 aerodynamic graphics, 4-stroke OHC engine, and crystal chrome finish.',
-            estimatedValue: 'PKR 185,000',
-            model3dType: 'cd70',
-            imageUrl: 'https://ahsanautos.pk/images/products/cd70-black-2027.webp',
-            eligibilityRules: 'Pakistani CNIC holder. 18+ years old.',
-          },
-          {
-            rank: 2,
-            title: 'iPhone 17 Pro Max',
-            tagline: 'Second Prize • Desert Titanium Flagship',
-            description:
-              'Titanium grade 5 chassis with ProMotion 120Hz display and periscope telephoto optical zoom system.',
-            estimatedValue: 'PKR 495,000',
-            model3dType: 'iphone17',
-            imageUrl: 'https://images.unsplash.com/photo-1695048133142-1a20484d2569?auto=format&fit=crop&w=800&q=80',
-            eligibilityRules: 'PTA-approved brand-new factory sealed unit.',
-          },
-          {
-            rank: 3,
-            title: 'Android Flagship Smartphone',
-            tagline: 'Third Prize • High-Performance AMOLED Flagship',
-            description:
-              '120Hz Curved AMOLED display, 108MP Quad camera array, 5000mAh battery with 67W Turbo Fast Charging.',
-            estimatedValue: 'PKR 145,000',
-            model3dType: 'android',
-            imageUrl: 'https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?auto=format&fit=crop&w=800&q=80',
-            eligibilityRules: 'PTA-approved with 1-Year Local Official Warranty.',
-          },
-        ],
-      },
-    },
+    include: { prizes: true },
   });
-  console.log('Draw created:', draw.title);
 
-  // 4. Create Demo Participants
-  const demoUsers = [
-    {
-      fullName: 'Hamza Khan',
-      phone: '03019876543',
-      email: 'hamza@example.pk',
-      code: '10K-HAMZA82',
-    },
-    {
-      fullName: 'Ali Raza',
-      phone: '03215554321',
-      email: 'ali@example.pk',
-      code: '10K-ALIR99',
-    },
-    {
-      fullName: 'Fatima Zahra',
-      phone: '03337778899',
-      email: 'fatima@example.pk',
-      code: '10K-FATIM7',
-    },
-    {
-      fullName: 'Bilal Ahmed',
-      phone: '03451122334',
-      email: 'bilal@example.pk',
-      code: '10K-BILAL1',
-    },
-    {
-      fullName: 'Usman Tariq',
-      phone: '03124455667',
-      email: 'usman@example.pk',
-      code: '10K-USMAN5',
-    },
-  ];
-
-  const defaultUserPassword = await bcrypt.hash('UserPassword123!', 10);
-  const createdUsers = [];
-
-  for (const u of demoUsers) {
-    const user = await prisma.user.upsert({
-      where: { phone: u.phone },
-      update: {},
-      create: {
-        fullName: u.fullName,
-        phone: u.phone,
-        email: u.email,
-        passwordHash: defaultUserPassword,
-        referralCode: u.code,
-        role: 'USER',
-        isVerified: true,
-      },
-    });
-    createdUsers.push(user);
-  }
-
-  // 5. Create Entries & Referrals for Top Participants
-  // Hamza Khan (#1 with 7 referrals)
-  // Ali Raza (#2 with 5 referrals)
-  // Fatima Zahra (#3 with 3 referrals)
-  const hamza = createdUsers[0];
-  const ali = createdUsers[1];
-  const fatima = createdUsers[2];
-
-  // Helper to add simulated entry
-  async function addEntry(userId, entryType = 'STANDARD', referralId = null) {
-    const randomHex = Math.random().toString(36).substring(2, 7).toUpperCase();
-    const entryNumber = `10KK-ENT-${Date.now().toString().slice(-4)}-${randomHex}`;
-    return await prisma.drawEntry.create({
+  let draw;
+  if (existingDraw) {
+    await prisma.prize.deleteMany({ where: { drawId: existingDraw.id } });
+    draw = await prisma.draw.update({
+      where: { id: existingDraw.id },
       data: {
-        entryNumber,
-        userId,
-        drawId: draw.id,
-        entryType,
+        totalEntriesCount: 0,
         status: 'ACTIVE',
-        referralId,
+        prizes: {
+          create: [
+            {
+              rank: 1,
+              title: 'Honda CD 70 2027 Model',
+              tagline: 'First Prize • Brand New 2027 Pakistani Motorcycle',
+              description:
+                'The pride of Pakistan with 2027 aerodynamic graphics, 4-stroke OHC engine, and crystal chrome finish.',
+              estimatedValue: 'PKR 185,000',
+              model3dType: 'cd70',
+              imageUrl: 'https://ahsanautos.pk/images/products/cd70-black-2027.webp',
+              eligibilityRules: 'Pakistani CNIC holder. 18+ years old.',
+            },
+            {
+              rank: 2,
+              title: 'iPhone 17 Pro Max',
+              tagline: 'Second Prize • Desert Titanium Flagship',
+              description:
+                'Titanium grade 5 chassis with ProMotion 120Hz display and periscope telephoto optical zoom system.',
+              estimatedValue: 'PKR 495,000',
+              model3dType: 'iphone17',
+              imageUrl: 'https://images.unsplash.com/photo-1695048133142-1a20484d2569?auto=format&fit=crop&w=800&q=80',
+              eligibilityRules: 'PTA-approved brand-new factory sealed unit.',
+            },
+            {
+              rank: 3,
+              title: 'Android Flagship Smartphone',
+              tagline: 'Third Prize • High-Performance AMOLED Flagship',
+              description:
+                '120Hz Curved AMOLED display, 108MP Quad camera array, 5000mAh battery with 67W Turbo Fast Charging.',
+              estimatedValue: 'PKR 145,000',
+              model3dType: 'android',
+              imageUrl: 'https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?auto=format&fit=crop&w=800&q=80',
+              eligibilityRules: 'PTA-approved with 1-Year Local Official Warranty.',
+            },
+          ],
+        },
+      },
+    });
+  } else {
+    draw = await prisma.draw.create({
+      data: {
+        title: 'Grand Pakistan Mega Draw 2027',
+        slug: 'mega-draw-2027',
+        description:
+          'Official 2027 Mega Draw for Pakistan. Win a brand-new Honda CD 70 2027 Model, iPhone 17 Pro Max, or Android Smartphone for just PKR 10.',
+        entryFeePKR: 10,
+        endDate: drawEndDate,
+        status: 'ACTIVE',
+        winnerSelectionMethod: 'RANKING',
+        totalEntriesCount: 0,
+        prizes: {
+          create: [
+            {
+              rank: 1,
+              title: 'Honda CD 70 2027 Model',
+              tagline: 'First Prize • Brand New 2027 Pakistani Motorcycle',
+              description:
+                'The pride of Pakistan with 2027 aerodynamic graphics, 4-stroke OHC engine, and crystal chrome finish.',
+              estimatedValue: 'PKR 185,000',
+              model3dType: 'cd70',
+              imageUrl: 'https://ahsanautos.pk/images/products/cd70-black-2027.webp',
+              eligibilityRules: 'Pakistani CNIC holder. 18+ years old.',
+            },
+            {
+              rank: 2,
+              title: 'iPhone 17 Pro Max',
+              tagline: 'Second Prize • Desert Titanium Flagship',
+              description:
+                'Titanium grade 5 chassis with ProMotion 120Hz display and periscope telephoto optical zoom system.',
+              estimatedValue: 'PKR 495,000',
+              model3dType: 'iphone17',
+              imageUrl: 'https://images.unsplash.com/photo-1695048133142-1a20484d2569?auto=format&fit=crop&w=800&q=80',
+              eligibilityRules: 'PTA-approved brand-new factory sealed unit.',
+            },
+            {
+              rank: 3,
+              title: 'Android Flagship Smartphone',
+              tagline: 'Third Prize • High-Performance AMOLED Flagship',
+              description:
+                '120Hz Curved AMOLED display, 108MP Quad camera array, 5000mAh battery with 67W Turbo Fast Charging.',
+              estimatedValue: 'PKR 145,000',
+              model3dType: 'android',
+              imageUrl: 'https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?auto=format&fit=crop&w=800&q=80',
+              eligibilityRules: 'PTA-approved with 1-Year Local Official Warranty.',
+            },
+          ],
+        },
       },
     });
   }
 
-  // Base entries
-  for (const u of createdUsers) {
-    const exists = await prisma.drawEntry.findFirst({
-      where: { userId: u.id, drawId: draw.id },
-    });
-    if (!exists) {
-      await addEntry(u.id, 'STANDARD');
-      await prisma.payment.create({
-        data: {
-          transactionRef: `JC-SIM-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
-          idempotencyKey: `IDEM-SEED-${u.id}`,
-          userId: u.id,
-          drawId: draw.id,
-          amountPKR: 10,
-          method: 'SIMULATED_WALLET',
-          status: 'SUCCESS',
-          isSimulated: true,
-          payerAccount: u.phone,
-          verifiedAt: new Date(),
-        },
-      });
-    }
-  }
-
-  // Generate verified referrals for Hamza (7 verified), Ali (5 verified), Fatima (3 verified)
-  async function createVerifiedReferralChain(referrer, count, baseTimestampMinutesAgo) {
-    for (let i = 1; i <= count; i++) {
-      const refereePhone = `0399${referrer.phone.slice(-3)}${String(i).padStart(4, '0')}`;
-      const referee = await prisma.user.upsert({
-        where: { phone: refereePhone },
-        update: {},
-        create: {
-          fullName: `Ref Participant ${i}`,
-          phone: refereePhone,
-          passwordHash: defaultUserPassword,
-          referralCode: `10K-REF${referrer.id.slice(0, 3)}${i}`,
-          isVerified: true,
-          referredById: referrer.id,
-        },
-      });
-
-      const refTime = new Date(Date.now() - (baseTimestampMinutesAgo - i * 5) * 60 * 1000);
-
-      const existingRef = await prisma.referral.findUnique({
-        where: { refereeId: referee.id },
-      });
-
-      if (!existingRef) {
-        // Create bonus entry for referrer
-        const bonusEntry = await prisma.drawEntry.create({
-          data: {
-            entryNumber: `10KK-BONUS-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
-            userId: referrer.id,
-            drawId: draw.id,
-            entryType: 'REFERRAL_BONUS',
-            status: 'ACTIVE',
-            createdAt: refTime,
-          },
-        });
-
-        await prisma.referral.create({
-          data: {
-            referrerId: referrer.id,
-            refereeId: referee.id,
-            drawId: draw.id,
-            status: 'VERIFIED',
-            bonusEntryAwarded: true,
-            bonusEntryId: bonusEntry.id,
-            verifiedAt: refTime,
-            createdAt: refTime,
-          },
-        });
-      }
-    }
-  }
-
-  await createVerifiedReferralChain(hamza, 7, 300);
-  await createVerifiedReferralChain(ali, 5, 200);
-  await createVerifiedReferralChain(fatima, 3, 100);
-
-  // Update total draw entries count
-  const totalEntries = await prisma.drawEntry.count({
-    where: { drawId: draw.id, status: 'ACTIVE' },
-  });
-  await prisma.draw.update({
-    where: { id: draw.id },
-    data: { totalEntriesCount: totalEntries },
-  });
-
-  console.log('Database seeded successfully with verified demo participants & leaderboard standings!');
+  console.log('Live draw prepared:', draw.title, 'Total entries: 0');
+  console.log('Database reset to clean state with ONLY Administrator account.');
 }
 
 main()

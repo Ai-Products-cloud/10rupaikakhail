@@ -8,18 +8,21 @@ datasource db {
 }
 
 model User {
-  id               String       @id @default(uuid())
-  fullName         String
-  phone            String       @unique
-  email            String?      @unique
-  passwordHash     String
-  referralCode     String       @unique
-  referredById     String?
-  role             String       @default("USER") // "USER" | "ADMIN"
-  isVerified       Boolean      @default(false)
-  verificationCode String?
-  createdAt        DateTime     @default(now())
-  updatedAt        DateTime     @updatedAt
+  id                 String       @id @default(uuid())
+  fullName           String
+  phone              String?      @unique
+  email              String?      @unique
+  passwordHash       String
+  referralCode       String       @unique
+  referredById       String?
+  role               String       @default("USER") // "USER" | "ADMIN"
+  isVerified         Boolean      @default(false)
+  verificationCode   String?
+  verificationMethod String?      @default("PHONE") // "PHONE" | "EMAIL"
+  phoneVerified      Boolean      @default(false)
+  emailVerified      Boolean      @default(false)
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
 
   // Self relation for referrals
   referredBy       User?        @relation("UserReferrals", fields: [referredById], references: [id])

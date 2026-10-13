@@ -80,7 +80,7 @@ export default function Footer() {
             </li>
             <li>
               <Link href="/prizes" className="hover:text-emerald-400 transition">
-                3D Prize Showcase
+                Prize Showcase
               </Link>
             </li>
             <li>

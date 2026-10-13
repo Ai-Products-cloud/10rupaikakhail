@@ -85,7 +85,7 @@ export default function AdminDrawsPage() {
             {/* Prizes linked */}
             <div className="space-y-2">
               <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">
-                Allocated 3D Prizes:
+                Allocated Prizes:
               </span>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {draw.prizes?.map((prize: any) => (
@@ -100,7 +100,7 @@ export default function AdminDrawsPage() {
                       <span className="text-amber-400 font-bold">{prize.estimatedValue}</span>
                     </div>
                     <span className="text-slate-300 block font-medium truncate">{prize.title}</span>
-                    <span className="text-[10px] text-emerald-400 block">3D Model: {prize.model3dType}</span>
+                    <span className="text-[10px] text-emerald-400 block">Category: {prize.tagline}</span>
                   </div>
                 ))}
               </div>
