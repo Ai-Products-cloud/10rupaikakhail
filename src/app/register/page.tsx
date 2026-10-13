@@ -16,6 +16,9 @@ import {
   KeyRound,
   X,
   Smartphone,
+  RefreshCw,
+  Clock,
+  ArrowLeft
 } from 'lucide-react';
 
 function RegisterForm() {
@@ -29,15 +32,16 @@ function RegisterForm() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [refCode, setRefCode] = useState('');
   const [termsAccepted, setTermsAccepted] = useState(false);
-  const [verificationMethod, setVerificationMethod] = useState<'PHONE' | 'EMAIL'>('PHONE');
+  const [verificationMethod, setVerificationMethod] = useState<'PHONE' | 'EMAIL'>('EMAIL');
 
   // Verification modal state
   const [showOtpModal, setShowOtpModal] = useState(false);
   const [otpCode, setOtpCode] = useState('');
-  const [generatedOtp, setGeneratedOtp] = useState('786012');
   const [otpError, setOtpError] = useState<string | null>(null);
+  const [resendTimer, setResendTimer] = useState(60);
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
 
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Scenario: Capture referral code from query params or localStorage
@@ -66,7 +70,20 @@ function RegisterForm() {
     }
   }, [phone, email]);
 
-  const handleInitiateVerification = (e: React.FormEvent) => {
+  // Resend OTP countdown timer
+  useEffect(() => {
+    if (!showOtpModal || resendTimer <= 0) return;
+    const interval = setInterval(() => {
+      setResendTimer((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [showOtpModal, resendTimer]);
+
+  const getVerificationTarget = () => {
+    return verificationMethod === 'EMAIL' ? email.trim() : phone.trim();
+  };
+
+  const handleInitiateVerification = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setOtpError(null);
@@ -106,20 +123,54 @@ function RegisterForm() {
       return;
     }
 
-    // Generate random 6-digit test OTP
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-    setGeneratedOtp(code);
-    setOtpCode('');
-    setShowOtpModal(true);
+    // Call real send-otp API
+    await sendOtpRequest();
+  };
+
+  const sendOtpRequest = async () => {
+    setIsSendingOtp(true);
+    setError(null);
+    setOtpError(null);
+
+    try {
+      const target = getVerificationTarget();
+      const res = await fetch('/api/auth/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          target,
+          type: verificationMethod,
+          fullName: fullName.trim(),
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to dispatch verification code.');
+      }
+
+      setOtpCode('');
+      setResendTimer(60);
+      setShowOtpModal(true);
+    } catch (err: any) {
+      setError(err.message || 'Failed to dispatch verification code. Please try again.');
+    } finally {
+      setIsSendingOtp(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    if (resendTimer > 0 || isSendingOtp) return;
+    await sendOtpRequest();
   };
 
   const handleConfirmRegistration = async () => {
-    if (otpCode.trim() !== generatedOtp && otpCode.trim() !== '786012') {
-      setOtpError('Invalid verification code. Please enter the 6-digit code shown.');
+    if (otpCode.trim().length !== 6) {
+      setOtpError('Please enter the full 6-digit verification code.');
       return;
     }
 
-    setLoading(true);
+    setIsVerifying(true);
     setError(null);
     setOtpError(null);
 
@@ -136,6 +187,7 @@ function RegisterForm() {
           termsAccepted,
           refCode: refCode.trim() || null,
           verificationMethod,
+          otp: otpCode.trim(),
         }),
       });
 
@@ -153,10 +205,9 @@ function RegisterForm() {
       router.push('/dashboard');
       router.refresh();
     } catch (err: any) {
-      setOtpError(err.message || 'An error occurred during registration.');
-      setError(err.message || 'An error occurred during registration.');
+      setOtpError(err.message || 'An error occurred during verification.');
     } finally {
-      setLoading(false);
+      setIsVerifying(false);
     }
   };
 
@@ -175,7 +226,7 @@ function RegisterForm() {
           </p>
         </div>
 
-        {/* Referral Scenario Welcome Badge */}
+        {/* Referral Welcome Badge */}
         {refCode && (
           <div className="p-3.5 bg-gradient-to-r from-emerald-950/80 to-slate-950 border border-emerald-500/40 rounded-2xl text-xs text-emerald-300 flex items-center gap-3 shadow-md">
             <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center flex-shrink-0 border border-amber-500/30">
@@ -191,8 +242,8 @@ function RegisterForm() {
         )}
 
         {error && (
-          <div className="p-3 bg-rose-950/60 border border-rose-500/40 rounded-xl text-xs text-rose-300 flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+          <div className="p-3.5 bg-rose-950/60 border border-rose-500/40 rounded-2xl text-xs text-rose-300 flex items-center gap-2.5">
+            <AlertCircle className="w-4 h-4 flex-shrink-0 text-rose-400" />
             <span>{error}</span>
           </div>
         )}
@@ -214,13 +265,13 @@ function RegisterForm() {
             </div>
           </div>
 
-          {/* Authentication Options: Mobile Number & Email */}
+          {/* Contact Details */}
           <div className="space-y-3 p-4 bg-slate-950/60 rounded-2xl border border-white/5">
             <span className="text-xs font-bold text-amber-400 uppercase tracking-wider block">
               Contact &amp; Verification Details
             </span>
             <p className="text-[11px] text-slate-400">
-              Provide your mobile number, email, or both. If you don&apos;t want to verify with a phone number, you can verify using your email!
+              Provide your mobile number, email, or both. Choose which channel to receive your 6-digit verification code.
             </p>
 
             {/* Mobile Number */}
@@ -239,7 +290,7 @@ function RegisterForm() {
                   type="tel"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  placeholder="Enter mobile number"
+                  placeholder="e.g. 03001234567"
                   className="w-full bg-slate-950 border border-white/10 rounded-xl py-2.5 pl-9 pr-4 text-white focus:outline-none focus:border-emerald-500 text-sm font-mono"
                 />
               </div>
@@ -251,9 +302,7 @@ function RegisterForm() {
                 <label className="text-slate-300 font-semibold">
                   Email Address {verificationMethod === 'EMAIL' ? '*' : '(Optional)'}
                 </label>
-                {email && (
-                  <span className="text-[10px] text-emerald-400 font-medium">Valid Email</span>
-                )}
+                <span className="text-[10px] text-slate-400">For draw notifications</span>
               </div>
               <div className="relative">
                 <Mail className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -261,47 +310,47 @@ function RegisterForm() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="name@example.com"
-                  className="w-full bg-slate-950 border border-white/10 rounded-xl py-2.5 pl-9 pr-4 text-white focus:outline-none focus:border-emerald-500 text-sm"
+                  placeholder="e.g. usman@example.com"
+                  className="w-full bg-slate-950 border border-white/10 rounded-xl py-2.5 pl-9 pr-4 text-white focus:outline-none focus:border-emerald-500 text-sm font-mono"
                 />
               </div>
             </div>
 
-            {/* Verification Method Switcher */}
-            <div className="pt-2 border-t border-white/5 space-y-2">
-              <span className="text-[11px] font-semibold text-slate-300 block">
-                Choose Verification Channel:
-              </span>
+            {/* Verification Channel Selector */}
+            <div className="pt-2 border-t border-white/5 space-y-1.5">
+              <label className="text-slate-300 font-semibold block">
+                Send 6-Digit Verification Code To:
+              </label>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
-                  onClick={() => setVerificationMethod('PHONE')}
-                  className={`p-2.5 rounded-xl border text-left transition flex items-center gap-2 ${
-                    verificationMethod === 'PHONE'
-                      ? 'bg-emerald-950/70 border-emerald-500 text-white shadow-md'
-                      : 'bg-slate-900 border-white/5 text-slate-400 hover:text-white'
-                  }`}
-                >
-                  <Smartphone className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                  <div>
-                    <span className="font-bold text-xs block">Mobile Number</span>
-                    <span className="text-[9px] text-slate-400">Verify via SMS</span>
-                  </div>
-                </button>
-
-                <button
-                  type="button"
                   onClick={() => setVerificationMethod('EMAIL')}
-                  className={`p-2.5 rounded-xl border text-left transition flex items-center gap-2 ${
+                  className={`p-3 rounded-xl border flex items-center gap-2.5 transition text-left ${
                     verificationMethod === 'EMAIL'
-                      ? 'bg-emerald-950/70 border-emerald-500 text-white shadow-md'
-                      : 'bg-slate-900 border-white/5 text-slate-400 hover:text-white'
+                      ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300'
+                      : 'bg-slate-900 border-white/10 text-slate-400 hover:text-white'
                   }`}
                 >
                   <Mail className="w-4 h-4 text-emerald-400 flex-shrink-0" />
                   <div>
                     <span className="font-bold text-xs block">Email Address</span>
-                    <span className="text-[9px] text-slate-400">Verify via Email</span>
+                    <span className="text-[9px] text-slate-400">Receive in Inbox</span>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setVerificationMethod('PHONE')}
+                  className={`p-3 rounded-xl border flex items-center gap-2.5 transition text-left ${
+                    verificationMethod === 'PHONE'
+                      ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300'
+                      : 'bg-slate-900 border-white/10 text-slate-400 hover:text-white'
+                  }`}
+                >
+                  <Smartphone className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                  <div>
+                    <span className="font-bold text-xs block">Mobile Number</span>
+                    <span className="text-[9px] text-slate-400">Receive via SMS</span>
                   </div>
                 </button>
               </div>
@@ -383,10 +432,20 @@ function RegisterForm() {
 
           <button
             type="submit"
-            className="w-full py-3.5 px-4 rounded-xl font-extrabold text-sm bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-xl shadow-emerald-950 transition flex items-center justify-center gap-2 cursor-pointer"
+            disabled={isSendingOtp}
+            className="w-full py-3.5 px-4 rounded-xl font-extrabold text-sm bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-xl shadow-emerald-950 transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
           >
-            <span>Proceed to Verification ({verificationMethod === 'PHONE' ? 'Phone' : 'Email'})</span>
-            <ArrowRight className="w-4 h-4" />
+            {isSendingOtp ? (
+              <>
+                <RefreshCw className="w-4 h-4 animate-spin" />
+                <span>Sending 6-Digit Code...</span>
+              </>
+            ) : (
+              <>
+                <span>Send Verification Code ({verificationMethod === 'PHONE' ? 'Phone' : 'Email'})</span>
+                <ArrowRight className="w-4 h-4" />
+              </>
+            )}
           </button>
         </form>
 
@@ -398,10 +457,10 @@ function RegisterForm() {
         </div>
       </div>
 
-      {/* OTP Verification Modal */}
+      {/* Real Scenario Verification Modal (NO test OTP displayed) */}
       {showOtpModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200">
-          <div className="bg-slate-900 border border-emerald-900/60 rounded-3xl w-full max-w-md shadow-2xl p-6 text-white space-y-5 relative">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="bg-slate-900 border border-emerald-500/40 rounded-3xl w-full max-w-md shadow-2xl p-6 sm:p-7 text-white space-y-5 relative">
             <div className="flex items-center justify-between border-b border-white/10 pb-3">
               <div className="flex items-center gap-2">
                 <KeyRound className="w-5 h-5 text-emerald-400" />
@@ -418,29 +477,25 @@ function RegisterForm() {
               </button>
             </div>
 
-            <p className="text-xs text-slate-300">
-              We have generated a verification code for{' '}
-              <strong className="text-white">
-                {verificationMethod === 'PHONE' ? phone : email}
-              </strong>
-              . Enter the 6-digit code below to activate your account.
-            </p>
-
-            {/* Sandbox OTP Helper */}
-            <div className="p-3 bg-slate-950/80 border border-amber-500/30 rounded-2xl space-y-1.5">
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-amber-400 font-semibold">Simulated Test OTP Code:</span>
+            <div className="space-y-2">
+              <p className="text-xs text-slate-300 leading-relaxed">
+                We have sent a 6-digit verification code to:
+              </p>
+              <div className="p-3 bg-slate-950 rounded-xl border border-white/10 flex items-center justify-between">
+                <span className="font-mono font-bold text-emerald-400 text-xs">
+                  {getVerificationTarget()}
+                </span>
                 <button
                   type="button"
-                  onClick={() => setOtpCode(generatedOtp)}
-                  className="px-2 py-0.5 rounded-lg bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 font-bold text-[10px]"
+                  onClick={() => setShowOtpModal(false)}
+                  className="text-[10px] text-amber-400 hover:underline font-bold"
                 >
-                  Auto-Fill
+                  Change
                 </button>
               </div>
-              <div className="font-mono text-xl font-black text-amber-400 tracking-widest text-center">
-                {generatedOtp}
-              </div>
+              <p className="text-[11px] text-slate-400">
+                Please check your {verificationMethod === 'EMAIL' ? 'email inbox (and spam/junk folder)' : 'SMS messages'} and enter the code below.
+              </p>
             </div>
 
             {otpError && (
@@ -459,30 +514,55 @@ function RegisterForm() {
                 maxLength={6}
                 value={otpCode}
                 onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
-                placeholder="786012"
-                className="w-full bg-slate-950 border border-white/10 rounded-xl py-3 px-4 text-center font-mono text-xl text-emerald-400 tracking-widest focus:outline-none focus:border-emerald-500"
+                placeholder="------"
+                className="w-full bg-slate-950 border border-white/10 rounded-xl py-3 px-4 text-center font-mono text-2xl text-emerald-400 tracking-[0.5em] focus:outline-none focus:border-emerald-500"
+                autoFocus
               />
+            </div>
+
+            {/* Resend Code Section */}
+            <div className="flex items-center justify-between text-xs pt-1 border-t border-white/5">
+              <span className="text-slate-400 text-[11px]">Didn&apos;t receive the code?</span>
+              {resendTimer > 0 ? (
+                <span className="text-slate-500 font-mono text-[11px] flex items-center gap-1">
+                  <Clock className="w-3 h-3 text-amber-400" />
+                  Resend in {resendTimer}s
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  disabled={isSendingOtp}
+                  onClick={handleResendOtp}
+                  className="text-emerald-400 hover:text-emerald-300 font-bold text-[11px] flex items-center gap-1 disabled:opacity-50"
+                >
+                  <RefreshCw className="w-3 h-3" />
+                  <span>Resend Code</span>
+                </button>
+              )}
             </div>
 
             <div className="flex gap-3 pt-2">
               <button
                 type="button"
                 onClick={() => setShowOtpModal(false)}
-                className="flex-1 py-3 rounded-xl bg-slate-800 text-slate-300 hover:text-white font-bold text-xs"
+                className="flex-1 py-3 rounded-xl bg-slate-800 text-slate-300 hover:text-white font-bold text-xs transition"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={handleConfirmRegistration}
-                disabled={loading || otpCode.length < 6}
-                className="flex-1 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-xs disabled:opacity-50 flex items-center justify-center gap-1.5"
+                disabled={isVerifying || otpCode.length !== 6}
+                className="flex-1 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-xs disabled:opacity-50 flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-950 transition"
               >
-                {loading ? (
-                  <span>Verifying...</span>
+                {isVerifying ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Verifying...</span>
+                  </>
                 ) : (
                   <>
-                    <CheckCircle2 className="w-4 h-4" />
+                    <CheckCircle2 className="w-3.5 h-3.5" />
                     <span>Complete Verification</span>
                   </>
                 )}
@@ -497,7 +577,13 @@ function RegisterForm() {
 
 export default function RegisterPage() {
   return (
-    <Suspense fallback={<div className="text-center py-20 text-slate-400">Loading registration...</div>}>
+    <Suspense
+      fallback={
+        <div className="min-h-[50vh] flex items-center justify-center text-slate-400 text-xs">
+          Loading registration...
+        </div>
+      }
+    >
       <RegisterForm />
     </Suspense>
   );

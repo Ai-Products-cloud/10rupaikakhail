@@ -196,3 +196,16 @@ model PlatformSetting {
   description String
   updatedAt   DateTime  @updatedAt
 }
+
+model OtpVerification {
+  id         String   @id @default(uuid())
+  target     String   // normalized phone or lowercase email
+  type       String   // "EMAIL" | "PHONE"
+  otp        String   // 6-digit verification code
+  expiresAt  DateTime
+  verified   Boolean  @default(false)
+  attempts   Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  @@index([target])
+}

@@ -9,6 +9,7 @@ import {
   generateReferralCode,
 } from '@/lib/auth';
 import { attachReferral } from '@/lib/referral';
+import { verifyOtp } from '@/lib/messenger';
 
 export async function POST(request: Request) {
   try {
@@ -22,6 +23,7 @@ export async function POST(request: Request) {
       termsAccepted,
       refCode,
       verificationMethod = 'PHONE',
+      otp,
     } = body;
 
     // 1. Validation
@@ -113,7 +115,24 @@ export async function POST(request: Request) {
       );
     }
 
-    // 3. Hash password & generate unique referral code
+    // 3. Verify real OTP code
+    const verificationTarget = verificationMethod === 'EMAIL' ? trimmedEmail : normalizedPhone;
+    if (!otp) {
+      return NextResponse.json(
+        { error: 'Please enter the 6-digit verification code sent to your email or mobile.' },
+        { status: 400 }
+      );
+    }
+
+    const verificationResult = await verifyOtp(verificationTarget!, otp);
+    if (!verificationResult.success) {
+      return NextResponse.json(
+        { error: verificationResult.error || 'Invalid or expired verification code.' },
+        { status: 400 }
+      );
+    }
+
+    // 4. Hash password & generate unique referral code
     const passwordHash = await hashPassword(password);
     let referralCode = generateReferralCode(fullName);
 
