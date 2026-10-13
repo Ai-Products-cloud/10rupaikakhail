@@ -14,6 +14,8 @@ import {
   FileCheck,
   ArrowLeft,
   AlertTriangle,
+  Ticket,
+  Volume2,
 } from 'lucide-react';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -46,10 +48,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const navItems = [
     { name: 'Admin Overview', href: '/admin', icon: LayoutDashboard },
-    { name: 'Legal & Feature Flags', href: '/admin/compliance', icon: ShieldAlert },
-    { name: 'Draws Management', href: '/admin/draws', icon: Trophy },
-    { name: 'Registered Users', href: '/admin/users', icon: Users },
+    { name: 'Users & Referrals', href: '/admin/users', icon: Users },
+    { name: 'Draw Entries Ledger', href: '/admin/entries', icon: Ticket },
+    { name: 'Draws & Time Controls', href: '/admin/draws', icon: Trophy },
+    { name: 'Sound & System Settings', href: '/admin/settings', icon: Volume2 },
     { name: 'Payments & Refunds', href: '/admin/payments', icon: CreditCard },
+    { name: 'Legal & Feature Flags', href: '/admin/compliance', icon: ShieldAlert },
   ];
 
   if (loading) {

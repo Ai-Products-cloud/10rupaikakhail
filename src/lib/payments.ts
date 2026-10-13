@@ -30,8 +30,35 @@ export async function initiatePayment({
     where: { id: drawId },
   });
 
-  if (!draw || draw.status !== 'ACTIVE') {
-    throw new Error('This lucky draw is currently not active or closed.');
+  if (!draw) {
+    throw new Error('This lucky draw was not found.');
+  }
+
+  // 1. Check Draw Status & Expiry Cutoff Time
+  if (draw.status !== 'ACTIVE') {
+    throw new Error(`This lucky draw is currently ${draw.status.toLowerCase()}. New entries cannot be placed.`);
+  }
+
+  if (new Date() > new Date(draw.endDate)) {
+    throw new Error('Draw entries have ended! The entry deadline has passed.');
+  }
+
+  // 2. Check Total Draw Capacity
+  if (draw.maxTotalEntries && draw.totalEntriesCount >= draw.maxTotalEntries) {
+    throw new Error(`Maximum draw capacity reached (${draw.maxTotalEntries} entries). No more entries can be placed.`);
+  }
+
+  // 3. Check User's Maximum Allowed Entries
+  const userActiveEntries = await prisma.drawEntry.count({
+    where: {
+      userId,
+      drawId,
+      status: 'ACTIVE',
+    },
+  });
+
+  if (userActiveEntries >= draw.maxEntriesPerUser) {
+    throw new Error(`You have reached the maximum allowed limit of ${draw.maxEntriesPerUser} entries for this draw.`);
   }
 
   // Generate unique transaction reference

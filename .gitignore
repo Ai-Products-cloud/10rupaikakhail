@@ -20,8 +20,15 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# local env files
+# local env and secrets
+.env
 .env*.local
+*.env
+
+# SQLite Databases
+*.db
+*.db-journal
+dev.db
 
 # vercel
 .vercel
