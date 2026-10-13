@@ -81,7 +81,7 @@ export default function LoginPage() {
                 required
                 value={loginIdentifier}
                 onChange={(e) => setLoginIdentifier(e.target.value)}
-                placeholder="03001234567 or email"
+                placeholder="Mobile number or email"
                 className="w-full bg-slate-950 border border-white/10 rounded-xl py-2.5 pl-9 pr-4 text-white focus:outline-none focus:border-emerald-500 text-sm font-mono"
               />
             </div>

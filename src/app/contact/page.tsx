@@ -84,7 +84,7 @@ export default function ContactPage() {
                   required
                   value={form.phone}
                   onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                  placeholder="03001234567"
+                  placeholder="Enter mobile number"
                   className="w-full bg-slate-950 border border-white/10 rounded-xl py-2.5 px-3 text-white text-sm font-mono"
                 />
               </div>

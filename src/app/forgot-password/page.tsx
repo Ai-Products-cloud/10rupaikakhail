@@ -50,7 +50,7 @@ export default function ForgotPasswordPage() {
                   required
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  placeholder="03001234567"
+                  placeholder="Enter mobile number or email"
                   className="w-full bg-slate-950 border border-white/10 rounded-xl py-2.5 pl-9 pr-4 text-white focus:outline-none focus:border-emerald-500 text-sm font-mono"
                 />
               </div>

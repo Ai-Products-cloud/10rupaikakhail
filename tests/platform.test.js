@@ -7,15 +7,20 @@ const prisma = new PrismaClient();
 
 // Helper functions replicate business logic for headless testing
 function normalizePakistaniPhone(phone) {
-  const cleaned = phone.replace(/[\s\-\(\)]/g, '');
-  if (cleaned.startsWith('+92')) return '0' + cleaned.slice(3);
-  if (cleaned.startsWith('92') && cleaned.length === 12) return '0' + cleaned.slice(2);
+  if (!phone) return '';
+  let cleaned = phone.replace(/[\s\-\(\)\.]/g, '');
+  if (cleaned.startsWith('0092')) cleaned = '0' + cleaned.slice(4);
+  else if (cleaned.startsWith('+92')) cleaned = '0' + cleaned.slice(3);
+  else if (cleaned.startsWith('92') && cleaned.length === 12) cleaned = '0' + cleaned.slice(2);
+  else if (/^3[0-9]{9}$/.test(cleaned)) cleaned = '0' + cleaned;
   return cleaned;
 }
 
 function isValidPakistaniPhone(phone) {
+  if (!phone) return false;
   const normalized = normalizePakistaniPhone(phone);
-  return /^03[0-9]{9}$/.test(normalized);
+  const digits = normalized.replace(/\D/g, '');
+  return digits.length >= 7 && digits.length <= 15;
 }
 
 function formatMaskedDisplayName(fullName, phone) {
@@ -101,10 +106,11 @@ describe('10kakhail Core Engine & Business Logic Test Suite', () => {
     assert.strictEqual(normalizePakistaniPhone('+923001234567'), '03001234567');
     assert.strictEqual(normalizePakistaniPhone('0301-9876543'), '03019876543');
     assert.strictEqual(normalizePakistaniPhone('923215554321'), '03215554321');
+    assert.strictEqual(normalizePakistaniPhone('3001234567'), '03001234567'); // auto-detected 10-digit
     assert.strictEqual(isValidPakistaniPhone('03001234567'), true);
-    assert.strictEqual(isValidPakistaniPhone('03451234567'), true);
-    assert.strictEqual(isValidPakistaniPhone('02131234567'), false); // Landline Karachi rejected
-    assert.strictEqual(isValidPakistaniPhone('12345'), false); // Invalid length rejected
+    assert.strictEqual(isValidPakistaniPhone('3001234567'), true);
+    assert.strictEqual(isValidPakistaniPhone('+923001234567'), true);
+    assert.strictEqual(isValidPakistaniPhone('12345'), false); // Too short (< 7 digits) rejected
   });
 
   test('2. Anti-Fraud: Prevent Self-Referral', () => {

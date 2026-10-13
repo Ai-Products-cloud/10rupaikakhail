@@ -82,7 +82,7 @@ function RegisterForm() {
     }
 
     if (verificationMethod === 'PHONE' && !phone.trim()) {
-      setError('Please enter your Pakistani mobile number to verify via phone, or switch to email verification.');
+      setError('Please enter your mobile number to verify via phone, or switch to email verification.');
       return;
     }
 
@@ -227,10 +227,10 @@ function RegisterForm() {
             <div>
               <div className="flex justify-between items-center mb-1">
                 <label className="text-slate-300 font-semibold">
-                  Pakistani Mobile Number {verificationMethod === 'PHONE' ? '*' : '(Optional)'}
+                  Mobile Number {verificationMethod === 'PHONE' ? '*' : '(Optional)'}
                 </label>
                 {phone && (
-                  <span className="text-[10px] text-emerald-400 font-medium">03XX-XXXXXXX</span>
+                  <span className="text-[10px] text-emerald-400 font-medium font-mono">Any valid number</span>
                 )}
               </div>
               <div className="relative">
@@ -239,7 +239,7 @@ function RegisterForm() {
                   type="tel"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  placeholder="03001234567"
+                  placeholder="Enter mobile number"
                   className="w-full bg-slate-950 border border-white/10 rounded-xl py-2.5 pl-9 pr-4 text-white focus:outline-none focus:border-emerald-500 text-sm font-mono"
                 />
               </div>

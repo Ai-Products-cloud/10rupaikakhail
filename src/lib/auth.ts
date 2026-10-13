@@ -35,28 +35,41 @@ export function verifyToken(token: string): TokenPayload | null {
 }
 
 /**
- * Normalizes Pakistani phone numbers to standard format 03XXXXXXXXX
+ * Flexible phone number normalization:
+ * Automatically cleans formatting and handles +92, 0092, 92, leading 0, or 10-digit formats.
  */
-export function normalizePakistaniPhone(phone?: string | null): string {
+export function normalizePhone(phone?: string | null): string {
   if (!phone) return '';
-  const cleaned = phone.replace(/[\s\-\(\)]/g, '');
-  if (cleaned.startsWith('+92')) {
-    return '0' + cleaned.slice(3);
+  let cleaned = phone.replace(/[\s\-\(\)\.]/g, '');
+
+  if (cleaned.startsWith('0092')) {
+    cleaned = '0' + cleaned.slice(4);
+  } else if (cleaned.startsWith('+92')) {
+    cleaned = '0' + cleaned.slice(3);
+  } else if (cleaned.startsWith('92') && cleaned.length === 12) {
+    cleaned = '0' + cleaned.slice(2);
+  } else if (/^3[0-9]{9}$/.test(cleaned)) {
+    // Automatically detect Pakistani 10-digit mobile number without leading 0 (e.g. 3001234567)
+    cleaned = '0' + cleaned;
   }
-  if (cleaned.startsWith('92') && cleaned.length === 12) {
-    return '0' + cleaned.slice(2);
-  }
+
   return cleaned;
 }
 
+export const normalizePakistaniPhone = normalizePhone;
+
 /**
- * Validates Pakistani mobile numbers (0300 to 0349 series, 11 digits)
+ * Validates any real phone number:
+ * Accepts any real phone number (7 to 15 digits according to standard E.164 telecommunications range).
  */
-export function isValidPakistaniPhone(phone?: string | null): boolean {
+export function isValidPhone(phone?: string | null): boolean {
   if (!phone) return false;
-  const normalized = normalizePakistaniPhone(phone);
-  return /^03[0-9]{9}$/.test(normalized);
+  const normalized = normalizePhone(phone);
+  const digitsOnly = normalized.replace(/\D/g, '');
+  return digitsOnly.length >= 7 && digitsOnly.length <= 15;
 }
+
+export const isValidPakistaniPhone = isValidPhone;
 
 /**
  * Validates email addresses

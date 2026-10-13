@@ -81,7 +81,7 @@ export async function POST(request: Request) {
     if (trimmedPhone) {
       if (!isValidPakistaniPhone(trimmedPhone)) {
         return NextResponse.json(
-          { error: 'Please enter a valid Pakistani mobile number (e.g. 03001234567 or +923001234567).' },
+          { error: 'Please enter a valid mobile number.' },
           { status: 400 }
         );
       }

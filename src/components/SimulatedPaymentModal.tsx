@@ -275,7 +275,7 @@ export default function SimulatedPaymentModal({
                       type="text"
                       value={accountNumber}
                       onChange={(e) => setAccountNumber(e.target.value)}
-                      placeholder="0300-1234567"
+                      placeholder="Enter account / mobile number"
                       className="w-full bg-slate-950 border border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-emerald-500 font-mono"
                     />
                   </div>
