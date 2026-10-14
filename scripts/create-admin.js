@@ -12,6 +12,15 @@
  * This ensures credentials are NEVER committed to GitHub repository.
  */
 
+// Load environment variables if available
+try {
+  if (typeof process.loadEnvFile === 'function') {
+    process.loadEnvFile();
+  }
+} catch {
+  // Ignore if .env doesn't exist or is already loaded
+}
+
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 const readline = require('readline');
@@ -47,16 +56,19 @@ async function main() {
   let phone = getArg('phone') || process.env.ADMIN_PHONE;
   let fullName = getArg('name') || process.env.ADMIN_NAME || 'Platform Administrator';
 
-  if (!email && !phone) {
+  const isInteractive = !email && !phone && !password;
+
+  if (isInteractive) {
     email = await ask('Enter Admin Email: ');
-  }
-
-  if (!phone) {
     phone = await ask('Enter Admin Phone Number (or press Enter to skip): ');
-  }
-
-  if (!password) {
-    password = await ask('Enter Strong Admin Password (min 8 chars): ');
+    password = await ask('Enter Strong Admin Password (min 6 chars): ');
+  } else {
+    if (!email && !phone) {
+      email = await ask('Enter Admin Email: ');
+    }
+    if (!password) {
+      password = await ask('Enter Admin Password: ');
+    }
   }
 
   if (!password || password.length < 6) {
