@@ -100,19 +100,36 @@ export async function verifyOtp(
   return { success: true };
 }
 
-// Real Email Sender via SMTP / Nodemailer
-export async function sendOtpEmail(email: string, otp: string, fullName?: string): Promise<{ sent: boolean; provider: string; messageId?: string }> {
-  const smtpHost = process.env.SMTP_HOST;
-  const smtpUser = process.env.SMTP_USER;
-  const smtpPass = process.env.SMTP_PASS;
-  const smtpPort = parseInt(process.env.SMTP_PORT || '587', 10);
-  const fromAddress = process.env.SMTP_FROM || '"10kakhail Support" <no-reply@10kakhail.pk>';
+// Real Email Sender via SMTP / Nodemailer (Supports Gmail, Resend, Custom SMTP)
+export async function sendOtpEmail(
+  email: string,
+  otp: string,
+  fullName?: string
+): Promise<{ sent: boolean; provider: string; messageId?: string; error?: string }> {
+  const smtpUser = process.env.SMTP_USER || process.env.GMAIL_USER;
+  const smtpPass = process.env.SMTP_PASS || process.env.GMAIL_APP_PASSWORD;
+  const rawHost = process.env.SMTP_HOST;
+  const smtpPort = parseInt(process.env.SMTP_PORT || '465', 10);
+
+  const isGmail =
+    Boolean((rawHost && rawHost.includes('gmail')) ||
+    (smtpUser && smtpUser.toLowerCase().includes('@gmail.com')));
+
+  const smtpHost = rawHost || (isGmail ? 'smtp.gmail.com' : undefined);
+
+  // Critical for Inbox Deliverability: Sender header must match authenticated Gmail account to pass SPF/DKIM
+  const defaultFrom = isGmail && smtpUser
+    ? `"10kakhail" <${smtpUser}>`
+    : (process.env.SMTP_FROM || `"10kakhail Support" <${smtpUser || 'no-reply@10kakhail.pk'}>`);
+  const fromAddress = process.env.SMTP_FROM || defaultFrom;
 
   const htmlBody = `
     <!DOCTYPE html>
-    <html>
+    <html lang="en">
       <head>
         <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Verification Code</title>
         <style>
           body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #020617; color: #f8fafc; margin: 0; padding: 24px; }
           .container { max-width: 520px; margin: 0 auto; background: #0f172a; border: 1px solid #1e293b; border-radius: 24px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
@@ -122,7 +139,7 @@ export async function sendOtpEmail(email: string, otp: string, fullName?: string
           .title { font-size: 20px; font-weight: 800; color: #ffffff; margin-bottom: 8px; }
           .subtitle { font-size: 13px; color: #94a3b8; line-height: 1.5; margin-bottom: 24px; }
           .otp-box { background: #020617; border: 2px dashed #10b981; border-radius: 16px; padding: 20px; text-align: center; margin: 24px 0; }
-          .otp-code { font-family: 'Courier New', Courier, monospace; font-size: 36px; font-weight: 900; color: #34d399; letter-spacing: 8px; }
+          .otp-code { font-family: 'Courier New', Courier, monospace; font-size: 38px; font-weight: 900; color: #34d399; letter-spacing: 8px; }
           .timer-notice { font-size: 11px; color: #fbbf24; font-weight: 600; margin-top: 8px; }
           .footer { background: #090d16; padding: 20px; text-align: center; font-size: 11px; color: #64748b; border-top: 1px solid #1e293b; }
         </style>
@@ -137,14 +154,14 @@ export async function sendOtpEmail(email: string, otp: string, fullName?: string
             <div class="title">Verify Your Email Address</div>
             <div class="subtitle">
               Hello ${fullName || 'Participant'},<br>
-              Thank you for registering on 10kakhail. Please use the following 6-digit verification code to complete your registration.
+              Please use the following 6-digit verification code to complete your registration on 10kakhail:
             </div>
             <div class="otp-box">
               <div class="otp-code">${otp}</div>
               <div class="timer-notice">⏱ Valid for 10 minutes only</div>
             </div>
             <div style="font-size: 12px; color: #94a3b8; line-height: 1.6;">
-              If you did not request this registration, you can safely ignore this email. Someone may have entered your email by mistake.
+              If you did not request this code, no further action is required. Please do not share this verification code with anyone.
             </div>
           </div>
           <div class="footer">
@@ -156,45 +173,96 @@ export async function sendOtpEmail(email: string, otp: string, fullName?: string
     </html>
   `;
 
-  // If SMTP credentials are provided, send the actual email
-  if (smtpHost && smtpUser && smtpPass) {
+  // 1. Resend API Dispatch (Recommended: Instant setup, no domain needed to test)
+  const resendApiKey = process.env.RESEND_API_KEY;
+  if (resendApiKey) {
     try {
-      const transporter = nodemailer.createTransport({
-        host: smtpHost,
-        port: smtpPort,
-        secure: smtpPort === 465,
-        auth: {
-          user: smtpUser,
-          pass: smtpPass,
+      const fromEmail = process.env.RESEND_FROM || process.env.SMTP_FROM || '10kakhail <onboarding@resend.dev>';
+      const resp = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${resendApiKey}`,
+          'Content-Type': 'application/json',
         },
+        body: JSON.stringify({
+          from: fromEmail,
+          to: [email],
+          subject: `${otp} is your 10kakhail verification code`,
+          html: htmlBody,
+          text: `Hello ${fullName || 'Participant'},\n\nYour 10kakhail verification code is: ${otp}\n\nThis code is valid for 10 minutes. Do not share it with anyone.\n\n— 10kakhail Pakistan`,
+        }),
       });
+
+      const resData = await resp.json();
+      if (resp.ok) {
+        console.log(`[RESEND EMAIL SENT] Recipient: ${email} | Id: ${resData.id}`);
+        return { sent: true, provider: 'RESEND', messageId: resData.id };
+      } else {
+        console.error('[RESEND EMAIL FAILED]', resData);
+      }
+    } catch (err: any) {
+      console.error('[RESEND DISPATCH ERROR]', err?.message || err);
+    }
+  }
+
+  // 2. SMTP or Gmail Dispatch
+  if (smtpUser && smtpPass) {
+    try {
+      const cleanPass = smtpPass.replace(/\s+/g, ''); // strip spaces from Google 16-char app password
+      const transporterConfig: any = isGmail
+        ? {
+            service: 'gmail',
+            auth: {
+              user: smtpUser,
+              pass: cleanPass,
+            },
+          }
+        : {
+            host: smtpHost || 'smtp.gmail.com',
+            port: smtpPort,
+            secure: smtpPort === 465,
+            auth: {
+              user: smtpUser,
+              pass: cleanPass,
+            },
+            tls: {
+              rejectUnauthorized: false,
+            },
+          };
+
+      const transporter = nodemailer.createTransport(transporterConfig);
 
       const info = await transporter.sendMail({
         from: fromAddress,
         to: email,
         subject: `${otp} is your 10kakhail verification code`,
-        text: `Your 10kakhail verification code is ${otp}. It will expire in 10 minutes.`,
+        text: `Hello ${fullName || 'Participant'},\n\nYour 10kakhail verification code is: ${otp}\n\nThis code is valid for 10 minutes. Do not share it with anyone.\n\n— 10kakhail Pakistan`,
         html: htmlBody,
+        headers: {
+          'X-Priority': '1',
+          'X-MSMail-Priority': 'High',
+          Importance: 'high',
+        },
       });
 
-      console.log(`[SMTP EMAIL SENT] Recipient: ${email} | MessageId: ${info.messageId}`);
-      return { sent: true, provider: 'SMTP', messageId: info.messageId };
+      console.log(`[SMTP EMAIL SENT] Recipient: ${email} | Provider: ${isGmail ? 'Gmail' : 'SMTP'} | MessageId: ${info.messageId}`);
+      return { sent: true, provider: isGmail ? 'GMAIL_SMTP' : 'SMTP', messageId: info.messageId };
     } catch (err: any) {
-      console.error('[SMTP EMAIL ERROR]', err);
-      // Fallback
+      console.error('[SMTP EMAIL ERROR]', err?.message || err);
+      return { sent: false, provider: 'SMTP', error: err?.message };
     }
   }
 
-  // Development/Demo fallback logger
+  // Notice if SMTP credentials are missing in current environment
   console.log('====================================================');
-  console.log(`[REAL VERIFICATION EMAIL DISPATCH]`);
+  console.log(`[SMTP NOT CONFIGURED - REAL EMAIL NOT SENT]`);
   console.log(`To: ${email}`);
-  console.log(`Verification Code: ${otp}`);
-  console.log(`Expires: 10 minutes`);
-  console.log(`Tip: Configure SMTP_HOST, SMTP_USER, SMTP_PASS in .env for custom external mail server`);
+  console.log(`Generated OTP: ${otp}`);
+  console.log(`Reason: Missing SMTP_USER and SMTP_PASS in environment variables.`);
+  console.log(`To enable live Gmail delivery, add SMTP_USER and SMTP_PASS in your .env / Vercel settings.`);
   console.log('====================================================');
 
-  return { sent: true, provider: 'MOCK_OR_DEV_LOGGER' };
+  return { sent: false, provider: 'NONE_CONFIGURED' };
 }
 
 // Real SMS Dispatch (supports Pakistani mobile networks & global SMS gateways)
