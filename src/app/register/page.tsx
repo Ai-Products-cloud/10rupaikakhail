@@ -498,6 +498,7 @@ function RegisterForm() {
               </p>
             </div>
 
+
             {otpError && (
               <div className="p-3 bg-rose-950/60 border border-rose-500/40 rounded-xl text-xs text-rose-300 flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 flex-shrink-0" />

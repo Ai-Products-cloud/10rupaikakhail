@@ -76,8 +76,8 @@ export async function verifyOtp(
     };
   }
 
-  // Check code match (also allow standard emergency audit code if configured)
-  const isMatch = record.otp === cleanCode || (process.env.NODE_ENV !== 'production' && cleanCode === '786012');
+  // Check code match: strict matching against the real OTP in database
+  const isMatch = record.otp === cleanCode;
 
   if (!isMatch) {
     await prisma.otpVerification.update({
@@ -197,28 +197,85 @@ export async function sendOtpEmail(email: string, otp: string, fullName?: string
   return { sent: true, provider: 'MOCK_OR_DEV_LOGGER' };
 }
 
-// Real SMS Dispatch (supports Pakistani mobile networks)
-export async function sendOtpSms(phone: string, otp: string): Promise<{ sent: boolean; provider: string }> {
+// Real SMS Dispatch (supports Pakistani mobile networks & global SMS gateways)
+export async function sendOtpSms(
+  phone: string,
+  otp: string
+): Promise<{ sent: boolean; provider: string; debugOtp?: string }> {
   const formattedPhone = phone.startsWith('+92')
     ? phone
     : phone.startsWith('0')
     ? `+92${phone.slice(1)}`
     : `+92${phone}`;
 
-  // If external SMS API (Twilio / Jazz / Telenor / SMS4Connect) configured in .env:
-  const smsApiKey = process.env.SMS_GATEWAY_API_KEY;
-  if (smsApiKey) {
-    // Dispatch to configured SMS gateway API
-    console.log(`[GATEWAY SMS SENT] To: ${formattedPhone} | Code: ${otp}`);
-    return { sent: true, provider: 'GATEWAY' };
+  const messageText = `Your 10kakhail verification code is ${otp}. Valid for 10 minutes.`;
+
+  // 1. Twilio SMS Gateway Integration (if configured in .env)
+  const twilioSid = process.env.TWILIO_ACCOUNT_SID;
+  const twilioAuth = process.env.TWILIO_AUTH_TOKEN;
+  const twilioFrom = process.env.TWILIO_PHONE_NUMBER;
+
+  if (twilioSid && twilioAuth && twilioFrom) {
+    try {
+      const endpoint = `https://api.twilio.com/2010-04-01/Accounts/${twilioSid}/Messages.json`;
+      const basicAuth = Buffer.from(`${twilioSid}:${twilioAuth}`).toString('base64');
+      const params = new URLSearchParams();
+      params.append('To', formattedPhone);
+      params.append('From', twilioFrom);
+      params.append('Body', messageText);
+
+      const resp = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          Authorization: `Basic ${basicAuth}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: params.toString(),
+      });
+
+      if (resp.ok) {
+        console.log(`[TWILIO SMS SENT] To: ${formattedPhone} | Code: ${otp}`);
+        return { sent: true, provider: 'TWILIO' };
+      } else {
+        const errorText = await resp.text();
+        console.error('[TWILIO SMS DISPATCH FAILED]', errorText);
+      }
+    } catch (twErr) {
+      console.error('[TWILIO SMS ERROR]', twErr);
+    }
   }
 
-  // Development/Live console audit
+  // 2. Generic Pakistani SMS Gateway API (SMS4Connect / Jazz / Telenor API)
+  const smsGatewayUrl = process.env.SMS_GATEWAY_URL;
+  const smsApiKey = process.env.SMS_GATEWAY_API_KEY;
+  if (smsGatewayUrl && smsApiKey) {
+    try {
+      const resp = await fetch(smsGatewayUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${smsApiKey}`,
+        },
+        body: JSON.stringify({
+          recipient: formattedPhone,
+          message: messageText,
+        }),
+      });
+      if (resp.ok) {
+        console.log(`[GATEWAY SMS SENT] To: ${formattedPhone}`);
+        return { sent: true, provider: 'SMS_GATEWAY' };
+      }
+    } catch (gwErr) {
+      console.error('[SMS GATEWAY ERROR]', gwErr);
+    }
+  }
+
+  // 3. Fallback / Sandbox Dispatch
   console.log('====================================================');
   console.log(`[REAL SMS VERIFICATION DISPATCH]`);
   console.log(`Mobile: ${formattedPhone}`);
-  console.log(`SMS Text: "Your 10kakhail verification code is ${otp}. Valid for 10 minutes."`);
+  console.log(`SMS Text: "${messageText}"`);
   console.log('====================================================');
 
-  return { sent: true, provider: 'LOCAL_SMS_ENGINE' };
+  return { sent: true, provider: 'LOCAL_SIMULATED', debugOtp: otp };
 }

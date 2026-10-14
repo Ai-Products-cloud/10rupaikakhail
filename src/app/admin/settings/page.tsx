@@ -22,7 +22,7 @@ export default function AdminSettingsPage() {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [trackTitle, setTrackTitle] = useState('Jeeto Pakistan Game Show (Waqar Ali / ARY Digital)');
   const [trackUrl, setTrackUrl] = useState('/audio/jeeto-pakistan-theme.mp3');
-  const [volume, setVolume] = useState(0.4);
+  const [volume, setVolume] = useState(0.5);
   const [sessionTimeoutMinutes, setSessionTimeoutMinutes] = useState(30);
 
   const [loading, setLoading] = useState(true);
@@ -47,9 +47,9 @@ export default function AdminSettingsPage() {
       if (res.ok) {
         const data = await res.json();
         setSoundEnabled(data.soundEnabled ?? true);
-        setTrackTitle(data.trackTitle || 'Jeeto Pakistan Rhythmic Beats');
-        setTrackUrl(data.trackUrl || 'synthesized-jeeto-beats');
-        setVolume(data.volume ?? 0.6);
+        setTrackTitle(data.trackTitle || 'Jeeto Pakistan Game Show (Waqar Ali / ARY Digital)');
+        setTrackUrl(data.trackUrl || '/audio/jeeto-pakistan-theme.mp3');
+        setVolume(data.volume ?? 0.5);
         setSessionTimeoutMinutes(data.sessionTimeoutMinutes ?? 30);
       }
     } catch (err) {
@@ -228,7 +228,7 @@ export default function AdminSettingsPage() {
                     type="button"
                     onClick={() => selectPreset('jeeto')}
                     className={`p-3.5 rounded-2xl border text-left transition ${
-                      trackUrl === 'synthesized-jeeto-beats'
+                      trackUrl === '/audio/jeeto-pakistan-theme.mp3'
                         ? 'bg-amber-500/15 border-amber-500/40 text-amber-300'
                         : 'bg-slate-950 border-white/5 text-slate-400 hover:text-white'
                     }`}
@@ -238,7 +238,7 @@ export default function AdminSettingsPage() {
                       <span className="font-bold text-xs text-white">Jeeto Pakistan Beats</span>
                     </div>
                     <p className="text-[10px] text-slate-400">
-                      High-energy game show dholak, tabla, and suspense percussion (Built-in Web Audio).
+                      High-energy game show dholak, tabla, and suspense percussion (Official Soundtrack).
                     </p>
                   </button>
 
@@ -246,7 +246,7 @@ export default function AdminSettingsPage() {
                     type="button"
                     onClick={() => selectPreset('custom')}
                     className={`p-3.5 rounded-2xl border text-left transition ${
-                      trackUrl !== 'synthesized-jeeto-beats'
+                      trackUrl !== '/audio/jeeto-pakistan-theme.mp3'
                         ? 'bg-amber-500/15 border-amber-500/40 text-amber-300'
                         : 'bg-slate-950 border-white/5 text-slate-400 hover:text-white'
                     }`}

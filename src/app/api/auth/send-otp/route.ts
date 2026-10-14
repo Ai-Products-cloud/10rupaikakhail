@@ -89,11 +89,12 @@ export async function POST(request: Request) {
     const otp = await createAndSaveOtp(cleanTarget, type);
 
     // Send real email or SMS with safety fallback
+    let smsResult: { sent: boolean; provider: string; debugOtp?: string } | undefined;
     try {
       if (type === 'EMAIL') {
         await sendOtpEmail(cleanTarget, otp, fullName);
       } else {
-        await sendOtpSms(cleanTarget, otp);
+        smsResult = await sendOtpSms(cleanTarget, otp);
       }
     } catch (dispatchErr: any) {
       console.warn('Dispatch non-blocking error:', dispatchErr);

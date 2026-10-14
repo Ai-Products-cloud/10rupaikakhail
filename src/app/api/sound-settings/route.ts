@@ -26,7 +26,7 @@ export async function GET() {
       soundEnabled: map.get('SOUND_ENABLED') !== 'false',
       trackTitle: map.get('SOUND_TRACK_TITLE') || 'Jeeto Pakistan Game Show (Waqar Ali / ARY Digital)',
       trackUrl: map.get('SOUND_TRACK_URL') || '/audio/jeeto-pakistan-theme.mp3',
-      volume: parseFloat(map.get('SOUND_VOLUME') || '0.4'),
+      volume: parseFloat(map.get('SOUND_VOLUME') || '0.5'),
       sessionTimeoutMinutes: parseInt(map.get('SESSION_TIMEOUT_MINUTES') || '30', 10),
     });
   } catch (error) {
@@ -34,7 +34,7 @@ export async function GET() {
       soundEnabled: true,
       trackTitle: 'Jeeto Pakistan Game Show (Waqar Ali / ARY Digital)',
       trackUrl: '/audio/jeeto-pakistan-theme.mp3',
-      volume: 0.4,
+      volume: 0.5,
       sessionTimeoutMinutes: 30,
     });
   }
