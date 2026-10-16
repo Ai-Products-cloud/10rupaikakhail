@@ -42,9 +42,6 @@ export default function MobileBottomNav() {
             >
               <div className="relative">
                 <Icon className={`w-5 h-5 transition-transform ${isActive ? 'scale-110 text-emerald-400' : 'text-slate-400'}`} />
-                {isActive && (
-                  <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400" />
-                )}
               </div>
               <span className={`text-[10px] mt-1 tracking-tight ${isActive ? 'text-emerald-300 font-bold' : 'text-slate-400'}`}>
                 {item.name}

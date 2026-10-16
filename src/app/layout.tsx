@@ -16,12 +16,13 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: "10kakhail - Pakistan's Premier PKR 10 Lucky Draw & Referral Platform",
   description:
-    'Join 10kakhail: Participate in eligible lucky draws for just PKR 10. Win 1st prize CD 70 2027 Model, iPhone 17 Pro Max, or Android Smartphone. Invite friends and earn verified bonus entries.',
+    'Join 10kakhail: Participate in eligible lucky draws for just PKR 10. Win 1st prize Bike, 2nd prize Smart Mobile, or 3rd prize Mobile. Invite friends and earn verified bonus entries.',
   keywords: [
     '10kakhail',
     'Lucky Draw Pakistan',
-    'CD 70 2027',
-    'iPhone 17 Pro Max',
+    'Bike Lucky Draw',
+    'Smart Mobile Draw',
+    'Mobile Draw',
     'Referral Bonus Draw',
     'PKR 10 Draw',
     'Jeeto Pakistan',

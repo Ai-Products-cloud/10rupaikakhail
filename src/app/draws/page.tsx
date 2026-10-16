@@ -71,7 +71,6 @@ export default function DrawsPage() {
                           {prize.rank === 1 ? '1st' : prize.rank === 2 ? '2nd' : '3rd'} Prize: {prize.title}
                         </span>
                       </div>
-                      <span className="text-amber-400 font-bold">{prize.estimatedValue}</span>
                     </div>
                   ))}
                 </div>
@@ -115,7 +114,7 @@ export default function DrawsPage() {
             </div>
             <h2 className="text-2xl font-black text-white">Grand Pakistan Mega Draw 2027</h2>
             <p className="text-xs text-slate-300">
-              The flagship national draw for 2027 featuring 1st Prize Honda CD 70 2027 Model, 2nd Prize iPhone 17 Pro Max, and 3rd Prize Android Flagship.
+              The flagship national draw for 2027 featuring 1st Prize Bike, 2nd Prize Smart Mobile, and 3rd Prize Mobile.
             </p>
             <button
               onClick={() =>

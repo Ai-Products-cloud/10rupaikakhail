@@ -173,11 +173,15 @@ export async function sendOtpEmail(
     </html>
   `;
 
-  // 1. Resend API Dispatch (Recommended: Instant setup, no domain needed to test)
+  // 1. Resend API Dispatch (Recommended: Instant setup)
   const resendApiKey = process.env.RESEND_API_KEY;
   if (resendApiKey) {
     try {
-      const fromEmail = process.env.RESEND_FROM || process.env.SMTP_FROM || '10kakhail <onboarding@resend.dev>';
+      let fromEmail = process.env.RESEND_FROM || process.env.SMTP_FROM || '10kakhail <onboarding@resend.dev>';
+      if (!fromEmail.includes('<') && fromEmail.includes('@')) {
+        fromEmail = `10kakhail <${fromEmail.trim()}>`;
+      }
+
       const resp = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
@@ -198,10 +202,17 @@ export async function sendOtpEmail(
         console.log(`[RESEND EMAIL SENT] Recipient: ${email} | Id: ${resData.id}`);
         return { sent: true, provider: 'RESEND', messageId: resData.id };
       } else {
-        console.error('[RESEND EMAIL FAILED]', resData);
+        const errorDetail = resData.message || resData.error || resData.name || 'Resend API rejected dispatch';
+        console.warn('[RESEND FAILED, CHECKING SMTP FALLBACK]', errorDetail);
+        if (!smtpUser || !smtpPass) {
+          return { sent: false, provider: 'RESEND', error: errorDetail };
+        }
       }
     } catch (err: any) {
-      console.error('[RESEND DISPATCH ERROR]', err?.message || err);
+      console.warn('[RESEND NETWORK ERROR, CHECKING SMTP FALLBACK]', err?.message || err);
+      if (!smtpUser || !smtpPass) {
+        return { sent: false, provider: 'RESEND', error: err?.message };
+      }
     }
   }
 

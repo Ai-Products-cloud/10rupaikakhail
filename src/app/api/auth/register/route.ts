@@ -9,7 +9,6 @@ import {
   generateReferralCode,
 } from '@/lib/auth';
 import { attachReferral } from '@/lib/referral';
-import { verifyOtp } from '@/lib/messenger';
 
 export async function POST(request: Request) {
   try {
@@ -22,45 +21,19 @@ export async function POST(request: Request) {
       confirmPassword,
       termsAccepted,
       refCode,
-      verificationMethod = 'PHONE',
-      otp,
     } = body;
 
-    // 1. Validation
-    if (!fullName || !password) {
+    // 1. Basic validation
+    if (!fullName || !fullName.trim()) {
       return NextResponse.json(
-        { error: 'Please provide your full legal name and password.' },
+        { error: 'Please enter your full legal name.' },
         { status: 400 }
       );
     }
 
-    const trimmedPhone = phone ? phone.trim() : '';
-    const trimmedEmail = email ? email.trim().toLowerCase() : '';
-
-    if (!trimmedPhone && !trimmedEmail) {
+    if (!password) {
       return NextResponse.json(
-        { error: 'Please provide either a Pakistani mobile number or an email address to register.' },
-        { status: 400 }
-      );
-    }
-
-    if (verificationMethod === 'PHONE' && !trimmedPhone) {
-      return NextResponse.json(
-        { error: 'Please provide a valid Pakistani mobile number to verify via SMS OTP.' },
-        { status: 400 }
-      );
-    }
-
-    if (verificationMethod === 'EMAIL' && !trimmedEmail) {
-      return NextResponse.json(
-        { error: 'Please provide an email address to verify via Email.' },
-        { status: 400 }
-      );
-    }
-
-    if (!termsAccepted) {
-      return NextResponse.json(
-        { error: 'You must accept the terms and conditions to register.' },
+        { error: 'Please create a secure password.' },
         { status: 400 }
       );
     }
@@ -79,17 +52,35 @@ export async function POST(request: Request) {
       );
     }
 
-    let normalizedPhone: string | null = null;
-    if (trimmedPhone) {
-      if (!isValidPakistaniPhone(trimmedPhone)) {
-        return NextResponse.json(
-          { error: 'Please enter a valid mobile number.' },
-          { status: 400 }
-        );
-      }
-      normalizedPhone = normalizePakistaniPhone(trimmedPhone);
+    if (!termsAccepted) {
+      return NextResponse.json(
+        { error: 'You must accept the terms and conditions to proceed.' },
+        { status: 400 }
+      );
     }
 
+    // 2. Pakistani Mobile Number Eligibility (PTA standard 11 digits: 0300 to 0359 series)
+    const trimmedPhone = phone ? phone.trim() : '';
+    if (!trimmedPhone) {
+      return NextResponse.json(
+        { error: 'Please provide an eligible Pakistani mobile number (e.g. 03001234567).' },
+        { status: 400 }
+      );
+    }
+
+    if (!isValidPakistaniPhone(trimmedPhone)) {
+      return NextResponse.json(
+        {
+          error:
+            'Invalid mobile number. Please enter an eligible Pakistani mobile number (11 digits starting with 03xx: Jazz 030x/032x, Zong 031x, Ufone 033x, Telenor 034x, SCO 0355).',
+        },
+        { status: 400 }
+      );
+    }
+
+    const normalizedPhone = normalizePakistaniPhone(trimmedPhone);
+
+    const trimmedEmail = email ? email.trim().toLowerCase() : '';
     if (trimmedEmail && !isValidEmail(trimmedEmail)) {
       return NextResponse.json(
         { error: 'Please enter a valid email address (e.g. name@example.com).' },
@@ -97,9 +88,26 @@ export async function POST(request: Request) {
       );
     }
 
-    // 2. Check existing user by phone or email
-    const orConditions = [];
-    if (normalizedPhone) orConditions.push({ phone: normalizedPhone });
+    // 3. Referral code validation (if user has a referral code)
+    let referrerUser = null;
+    if (refCode && refCode.trim()) {
+      const cleanRef = refCode.trim().toUpperCase();
+      referrerUser = await prisma.user.findUnique({
+        where: { referralCode: cleanRef },
+      });
+
+      if (!referrerUser) {
+        return NextResponse.json(
+          {
+            error: `Referral code "${cleanRef}" was not found. Please check your code or leave blank.`,
+          },
+          { status: 400 }
+        );
+      }
+    }
+
+    // 4. Check existing user by phone or email
+    const orConditions: any[] = [{ phone: normalizedPhone }];
     if (trimmedEmail) orConditions.push({ email: trimmedEmail });
 
     const existingUser = await prisma.user.findFirst({
@@ -110,33 +118,15 @@ export async function POST(request: Request) {
 
     if (existingUser) {
       return NextResponse.json(
-        { error: 'An account with this mobile number or email already exists. Please log in.' },
+        { error: 'An account with this mobile number already exists. Please log in.' },
         { status: 409 }
       );
     }
 
-    // 3. Verify real OTP code
-    const verificationTarget = verificationMethod === 'EMAIL' ? trimmedEmail : normalizedPhone;
-    if (!otp) {
-      return NextResponse.json(
-        { error: 'Please enter the 6-digit verification code sent to your email or mobile.' },
-        { status: 400 }
-      );
-    }
-
-    const verificationResult = await verifyOtp(verificationTarget!, otp);
-    if (!verificationResult.success) {
-      return NextResponse.json(
-        { error: verificationResult.error || 'Invalid or expired verification code.' },
-        { status: 400 }
-      );
-    }
-
-    // 4. Hash password & generate unique referral code
+    // 5. Hash password & generate unique referral code
     const passwordHash = await hashPassword(password);
     let referralCode = generateReferralCode(fullName);
 
-    // Ensure referral code uniqueness
     let attempts = 0;
     while (attempts < 5) {
       const exists = await prisma.user.findUnique({ where: { referralCode } });
@@ -145,10 +135,7 @@ export async function POST(request: Request) {
       attempts++;
     }
 
-    const isPhoneVerified = verificationMethod === 'PHONE';
-    const isEmailVerified = verificationMethod === 'EMAIL';
-
-    // 4. Create user
+    // 6. Direct registration without confirmation requirement
     const newUser = await prisma.user.create({
       data: {
         fullName: fullName.trim(),
@@ -157,22 +144,22 @@ export async function POST(request: Request) {
         passwordHash,
         referralCode,
         isVerified: true,
-        verificationMethod,
-        phoneVerified: isPhoneVerified,
-        emailVerified: isEmailVerified,
+        phoneVerified: true,
+        emailVerified: !!trimmedEmail,
+        verificationMethod: 'PHONE',
         role: 'USER',
       },
     });
 
-    // 5. Attach referral if referred by an existing user
-    if (refCode) {
+    // 7. Attach referral if referrer verified
+    if (referrerUser) {
       await attachReferral({
         refereeId: newUser.id,
-        referralCode: refCode,
+        referralCode: referrerUser.referralCode,
       });
     }
 
-    // 6. Generate session JWT
+    // 8. Generate session JWT
     const token = generateToken({
       userId: newUser.id,
       phone: newUser.phone,
@@ -182,7 +169,7 @@ export async function POST(request: Request) {
     });
 
     const response = NextResponse.json({
-      message: 'Account created successfully!',
+      message: 'Account registered successfully!',
       user: {
         id: newUser.id,
         fullName: newUser.fullName,
@@ -192,8 +179,7 @@ export async function POST(request: Request) {
         role: newUser.role,
         isVerified: newUser.isVerified,
         phoneVerified: newUser.phoneVerified,
-        emailVerified: newUser.emailVerified,
-        verificationMethod: newUser.verificationMethod,
+        referredBy: referrerUser ? referrerUser.fullName : null,
       },
     });
 
@@ -212,7 +198,7 @@ export async function POST(request: Request) {
   } catch (error: any) {
     console.error('Registration error:', error);
     return NextResponse.json(
-      { error: 'An unexpected error occurred during registration.' },
+      { error: 'An unexpected error occurred during registration. Please try again.' },
       { status: 500 }
     );
   }

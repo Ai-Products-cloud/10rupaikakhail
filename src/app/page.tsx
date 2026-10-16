@@ -77,7 +77,7 @@ export default function HomePage() {
     },
     {
       q: 'How are winners selected?',
-      a: 'The primary proposed winner-selection model is referral ranking: the top 3 participants with the highest verified referrals at draw close qualify for 1st Prize (CD 70 2027), 2nd Prize (iPhone 17 Pro Max), and 3rd Prize (Android Smartphone). All ties are broken by the earliest timestamp at which the referral total was achieved.',
+      a: 'The primary proposed winner-selection model is referral ranking: the top 3 participants with the highest verified referrals at draw close qualify for 1st Prize (Bike), 2nd Prize (Smart Mobile), and 3rd Prize (Mobile). All ties are broken by the earliest timestamp at which the referral total was achieved.',
     },
     {
       q: 'How many bonus entries can I earn?',
@@ -174,44 +174,44 @@ export default function HomePage() {
 
         {/* 3 Prize Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
-          {/* First Prize: Motorcycle CD 70 Pakistani Model 2027 */}
+          {/* First Prize: Bike */}
           <PrizeCard3D
             rank={1}
-            title="Honda CD 70 2027 Model"
-            tagline="First Prize • Brand New 2027 Pakistani Motorcycle"
-            estimatedValue="PKR 185,000"
-            description="The pride of Pakistan's roads. Featuring the high-efficiency 4-stroke engine, all-new 2027 aerodynamic tank graphics, and crystal chrome finish."
-            eligibility="Eligibility: Verified Pakistani citizen (CNIC / Mobile verification required upon claim)."
+            title="Bike"
+            tagline="First Prize • Brand New Motorcycle"
+            estimatedValue=""
+            description="Brand new fuel-efficient motorcycle built for reliable performance, high mileage, and everyday commute across Pakistan."
+            eligibility="Eligibility: Verified Pakistani citizen with valid CNIC. Free registration & road tax support included."
             modelType="cd70"
             imageUrl="https://ahsanautos.pk/images/products/cd70-black-2027.webp"
             status="Active in Draw 2027"
             onEnterClick={() => setIsPaymentModalOpen(true)}
           />
 
-          {/* Second Prize: iPhone 17 Pro Max */}
+          {/* Second Prize: Smart Mobile */}
           <PrizeCard3D
             rank={2}
-            title="iPhone 17 Pro Max"
-            tagline="Second Prize • Desert Titanium Flagship"
-            estimatedValue="PKR 495,000"
-            description="Next-generation Apple flagship featuring Grade 5 titanium chassis, ProMotion 120Hz display, and cutting-edge triple lens optical zoom system."
-            eligibility="Eligibility: Official PTA-approved brand new sealed box unit."
+            title="Smart Mobile"
+            tagline="Second Prize • Touchscreen Smart Mobile Phone"
+            estimatedValue=""
+            description="Modern PTA-approved touchscreen smartphone featuring vibrant high-resolution display, advanced multi-camera array, and all-day battery endurance."
+            eligibility="Eligibility: Official PTA-approved brand new sealed box unit with warranty."
             modelType="iphone17"
             imageUrl="https://images.unsplash.com/photo-1695048133142-1a20484d2569?auto=format&fit=crop&w=800&q=80"
             status="Active in Draw 2027"
             onEnterClick={() => setIsPaymentModalOpen(true)}
           />
 
-          {/* Third Prize: Android Smartphone */}
+          {/* Third Prize: Mobile */}
           <PrizeCard3D
             rank={3}
-            title="Android Flagship Smartphone"
-            tagline="Third Prize • High-Performance AMOLED"
-            estimatedValue="PKR 145,000"
-            description="Featuring 120Hz Curved AMOLED display, 108MP Quad camera system, 5000mAh battery with 67W Turbo Fast Charging and 5G connectivity."
-            eligibility="Eligibility: Official PTA-approved with 1-Year Local Official Warranty."
+            title="Mobile"
+            tagline="Third Prize • Mobile Phone"
+            estimatedValue=""
+            description="Durable compact mobile phone engineered for loud & clear voice calls, wireless FM entertainment, and ultra-long battery standby."
+            eligibility="Eligibility: Official PTA-approved brand new handset with standard warranty."
             modelType="android"
-            imageUrl="https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?auto=format&fit=crop&w=800&q=80"
+            imageUrl="https://images.unsplash.com/photo-1598327105666-5b89351aff97?auto=format&fit=crop&w=800&q=80"
             status="Active in Draw 2027"
             onEnterClick={() => setIsPaymentModalOpen(true)}
           />
@@ -415,7 +415,7 @@ export default function HomePage() {
       <section className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         <div className="bg-gradient-to-r from-emerald-800 via-emerald-700 to-teal-800 rounded-3xl p-8 sm:p-12 text-center text-white space-y-6 shadow-2xl relative overflow-hidden">
           <div className="max-w-2xl mx-auto space-y-3 relative z-10">
-            <h2 className="text-3xl sm:text-4xl font-black">Ready to Win Your Honda CD 70 or iPhone 17?</h2>
+            <h2 className="text-3xl sm:text-4xl font-black">Ready to Win Your Bike or Smart Mobile?</h2>
             <p className="text-sm text-emerald-100">
               Join thousands of participants across Pakistan. Sign up now, test the PKR 10 entry workflow, and share your link with friends.
             </p>

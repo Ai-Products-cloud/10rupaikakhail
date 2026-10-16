@@ -33,7 +33,7 @@ export default function SimulatedPaymentModal({
   draw,
   onSuccess,
 }: SimulatedPaymentModalProps) {
-  const [method, setMethod] = useState<'JAZZCASH' | 'EASYPAISA' | 'SIMULATED_WALLET'>('JAZZCASH');
+  const [method, setMethod] = useState<'JAZZCASH' | 'EASYPAISA'>('JAZZCASH');
   const [accountNumber, setAccountNumber] = useState('0301-2345678');
   const [testScenario, setTestScenario] = useState<'SUCCESS' | 'FAILURE'>('SUCCESS');
   const [isLoading, setIsLoading] = useState(false);
@@ -213,9 +213,9 @@ export default function SimulatedPaymentModal({
               {/* Payment Method Selector */}
               <div>
                 <label className="text-xs font-semibold text-slate-300 mb-2 block">
-                  Select Simulated Pakistani Wallet:
+                  Select Payment Method:
                 </label>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 gap-3">
                   <button
                     type="button"
                     onClick={() => setMethod('JAZZCASH')}
@@ -225,7 +225,7 @@ export default function SimulatedPaymentModal({
                         : 'bg-slate-950/50 border-white/5 text-slate-400 hover:border-white/20'
                     }`}
                   >
-                    <div className="w-7 h-7 rounded-lg bg-red-600 text-white flex items-center justify-center font-black text-[10px]">
+                    <div className="w-8 h-8 rounded-lg bg-red-600 text-white flex items-center justify-center font-black text-xs">
                       JC
                     </div>
                     <span className="text-xs font-bold">JazzCash</span>
@@ -240,31 +240,16 @@ export default function SimulatedPaymentModal({
                         : 'bg-slate-950/50 border-white/5 text-slate-400 hover:border-white/20'
                     }`}
                   >
-                    <div className="w-7 h-7 rounded-lg bg-emerald-600 text-white flex items-center justify-center font-black text-[10px]">
+                    <div className="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center font-black text-xs">
                       EP
                     </div>
                     <span className="text-xs font-bold">Easypaisa</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setMethod('SIMULATED_WALLET')}
-                    className={`p-3 rounded-xl border text-center transition flex flex-col items-center gap-1 ${
-                      method === 'SIMULATED_WALLET'
-                        ? 'bg-amber-950/60 border-amber-500 text-white shadow-lg shadow-amber-950'
-                        : 'bg-slate-950/50 border-white/5 text-slate-400 hover:border-white/20'
-                    }`}
-                  >
-                    <div className="w-7 h-7 rounded-lg bg-amber-500 text-slate-950 flex items-center justify-center font-black text-[10px]">
-                      10K
-                    </div>
-                    <span className="text-xs font-bold">1-Click Test</span>
                   </button>
                 </div>
               </div>
 
               {/* Account Number Input */}
-              {method !== 'SIMULATED_WALLET' && (
+              <div>
                 <div>
                   <label className="text-xs font-semibold text-slate-300 mb-1.5 block">
                     {method === 'JAZZCASH' ? 'JazzCash Account Number' : 'Easypaisa Mobile Number'}:
@@ -280,7 +265,7 @@ export default function SimulatedPaymentModal({
                     />
                   </div>
                 </div>
-              )}
+              </div>
 
               {/* Demo Mode Testing Toggles */}
               <div className="p-3 bg-slate-950/60 rounded-xl border border-white/10 text-xs space-y-1.5">

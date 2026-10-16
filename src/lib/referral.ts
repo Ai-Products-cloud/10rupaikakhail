@@ -310,11 +310,11 @@ export async function getReferralLeaderboard(limit = 20) {
     ...item,
     status:
       index === 0
-        ? 'First Place (1st Prize Contender - CD 70 2027)'
+        ? 'First Place (1st Prize Contender - Bike)'
         : index === 1
-        ? 'Second Place (2nd Prize Contender - iPhone 17 Pro Max)'
+        ? 'Second Place (2nd Prize Contender - Smart Mobile)'
         : index === 2
-        ? 'Third Place (3rd Prize Contender - Android Smartphone)'
+        ? 'Third Place (3rd Prize Contender - Mobile)'
         : 'Top Performer',
   }));
 

@@ -21,7 +21,7 @@ export default function FAQPage() {
     },
     {
       q: 'What prizes are available?',
-      a: 'In the Grand 2027 Mega Draw, there are three primary prizes: First Prize is a brand-new Honda CD 70 2027 Model Pakistani motorcycle; Second Prize is an iPhone 17 Pro Max; and Third Prize is an Android Flagship Smartphone. You can view full details of each prize on our Prize page.',
+      a: 'In the Grand Mega Draw, there are three primary prizes: First Prize is a brand-new Bike; Second Prize is a Smart Mobile; and Third Prize is a Mobile. You can view full details of each prize on our Prize page.',
     },
     {
       q: 'How is the winner selected?',

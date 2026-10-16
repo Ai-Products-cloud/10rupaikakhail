@@ -44,8 +44,9 @@ export default function AdminEntriesPage() {
 
   const filteredEntries = entries.filter((entry) => {
     const query = searchQuery.toLowerCase();
+    const ticketId = entry.entryNumber || entry.ticketNumber || '';
     const matchesSearch =
-      (entry.ticketNumber || '').toLowerCase().includes(query) ||
+      ticketId.toLowerCase().includes(query) ||
       (entry.user?.fullName || '').toLowerCase().includes(query) ||
       (entry.user?.phone || '').toLowerCase().includes(query) ||
       (entry.user?.email || '').toLowerCase().includes(query) ||
@@ -206,7 +207,7 @@ export default function AdminEntriesPage() {
                     <td className="p-4 font-mono font-bold text-amber-400 text-xs">
                       <div className="flex items-center gap-1.5">
                         <Hash className="w-3.5 h-3.5 text-amber-500" />
-                        <span>{entry.ticketNumber}</span>
+                        <span>{entry.entryNumber || entry.ticketNumber}</span>
                       </div>
                     </td>
 

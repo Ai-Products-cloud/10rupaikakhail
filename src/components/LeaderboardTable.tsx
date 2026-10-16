@@ -128,17 +128,17 @@ export default function LeaderboardTable({
                   {isFirst ? (
                     <div className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border border-amber-500/40 text-amber-300 font-bold text-xs">
                       <Trophy className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
-                      <span>1st Prize: Motorcycle CD 70 2027</span>
+                      <span>1st Prize: Bike</span>
                     </div>
                   ) : isSecond ? (
                     <div className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-slate-400/20 border border-slate-300/40 text-slate-200 font-bold text-xs">
                       <Medal className="w-3.5 h-3.5 text-slate-300 flex-shrink-0" />
-                      <span>2nd Prize: iPhone 17 Pro Max</span>
+                      <span>2nd Prize: Smart Mobile</span>
                     </div>
                   ) : isThird ? (
                     <div className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-amber-800/20 border border-amber-700/40 text-amber-400 font-bold text-xs">
                       <Medal className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
-                      <span>3rd Prize: Android Smartphone</span>
+                      <span>3rd Prize: Mobile</span>
                     </div>
                   ) : (
                     <div className="text-center text-[11px] text-slate-500 py-1">
@@ -243,17 +243,17 @@ export default function LeaderboardTable({
                       {isFirst ? (
                         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border border-amber-500/40 text-amber-300 font-bold text-xs">
                           <Trophy className="w-3.5 h-3.5 text-amber-400" />
-                          <span>1st Prize: Motorcycle CD 70 2027</span>
+                          <span>1st Prize: Bike</span>
                         </div>
                       ) : isSecond ? (
                         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-400/20 border border-slate-300/40 text-slate-200 font-bold text-xs">
                           <Medal className="w-3.5 h-3.5 text-slate-300" />
-                          <span>2nd Prize: iPhone 17 Pro Max</span>
+                          <span>2nd Prize: Smart Mobile</span>
                         </div>
                       ) : isThird ? (
                         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-800/20 border border-amber-700/40 text-amber-400 font-bold text-xs">
                           <Medal className="w-3.5 h-3.5 text-amber-500" />
-                          <span>3rd Prize: Android Smartphone</span>
+                          <span>3rd Prize: Mobile</span>
                         </div>
                       ) : (
                         <span className="text-slate-500 text-xs">Top Performer Certificate</span>

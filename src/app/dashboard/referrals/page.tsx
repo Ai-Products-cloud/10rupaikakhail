@@ -36,7 +36,7 @@ export default function MyReferralsPage() {
   const handleWhatsAppShare = () => {
     if (referralUrl) {
       const text = encodeURIComponent(
-        `Join me on 10kakhail! Enter the Grand Mega Draw for just PKR 10 and win Honda CD 70 2027 or iPhone 17 Pro Max! Register here: ${referralUrl}`
+        `Join me on 10kakhail! Enter the Grand Mega Draw for just PKR 10 and win a brand-new Bike or Smart Mobile! Register here: ${referralUrl}`
       );
       window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
     }

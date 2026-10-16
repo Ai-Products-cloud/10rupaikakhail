@@ -88,16 +88,22 @@ export async function POST(request: Request) {
     // Generate and persist code in Supabase
     const otp = await createAndSaveOtp(cleanTarget, type);
 
-    // Send real email or SMS with safety fallback
+    // Send real email or SMS with safety check
     let smsResult: { sent: boolean; provider: string; debugOtp?: string } | undefined;
-    try {
-      if (type === 'EMAIL') {
-        await sendOtpEmail(cleanTarget, otp, fullName);
-      } else {
-        smsResult = await sendOtpSms(cleanTarget, otp);
+    if (type === 'EMAIL') {
+      const emailResult = await sendOtpEmail(cleanTarget, otp, fullName);
+      if (!emailResult.sent) {
+        const errorMsg = emailResult.error
+          ? `Email delivery failed: ${emailResult.error}`
+          : 'Email service is not configured. Please add RESEND_API_KEY or SMTP credentials in your environment.';
+        return NextResponse.json({ error: errorMsg }, { status: 400 });
       }
-    } catch (dispatchErr: any) {
-      console.warn('Dispatch non-blocking error:', dispatchErr);
+    } else {
+      try {
+        smsResult = await sendOtpSms(cleanTarget, otp);
+      } catch (dispatchErr: any) {
+        console.warn('Dispatch non-blocking error:', dispatchErr);
+      }
     }
 
     return NextResponse.json({

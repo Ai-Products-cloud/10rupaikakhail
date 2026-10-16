@@ -42,11 +42,6 @@ export default function LoginPage() {
     }
   };
 
-  const handleQuickFill = (identifier: string, pass: string) => {
-    setLoginIdentifier(identifier);
-    setPassword(pass);
-  };
-
   return (
     <div className="max-w-md mx-auto px-4 py-12 space-y-6">
       <div className="bg-slate-900/90 border border-emerald-900/40 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-md space-y-6">
@@ -131,31 +126,6 @@ export default function LoginPage() {
           <Link href="/register" className="text-emerald-400 font-bold hover:underline">
             Register now
           </Link>
-        </div>
-      </div>
-
-      {/* Live Admin Credentials Quick-Fill */}
-      <div className="bg-slate-950/80 border border-white/10 rounded-2xl p-4 text-xs space-y-3">
-        <span className="text-amber-400 font-bold uppercase tracking-wider block text-[10px]">
-          Live Administrator Credentials:
-        </span>
-        <div>
-          <button
-            type="button"
-            onClick={() => handleQuickFill('03001234567', 'AdminPassword123!')}
-            className="w-full p-2.5 rounded-xl bg-slate-900 border border-amber-500/30 hover:border-amber-500 text-left transition flex items-center justify-between"
-          >
-            <div className="flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-amber-400" />
-              <div>
-                <span className="text-amber-300 font-bold text-xs block">Chief Administrator</span>
-                <span className="text-[10px] text-slate-400 font-mono">03001234567 / admin@10kakhail.pk</span>
-              </div>
-            </div>
-            <span className="text-[11px] text-amber-400 font-semibold bg-amber-500/10 px-2 py-1 rounded-lg border border-amber-500/20">
-              Quick Fill
-            </span>
-          </button>
         </div>
       </div>
     </div>

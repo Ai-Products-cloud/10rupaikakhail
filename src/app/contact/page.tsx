@@ -26,14 +26,6 @@ export default function ContactPage() {
         <div className="bg-slate-900/80 rounded-3xl p-8 border border-white/10 space-y-6">
           <h2 className="text-xl font-extrabold text-white">Customer Helpdesk (Pakistan)</h2>
           <div className="space-y-4 text-xs text-slate-300">
-            <div className="flex items-start gap-3">
-              <Phone className="w-4 h-4 text-emerald-400 mt-0.5" />
-              <div>
-                <strong className="text-white block">Helpline</strong>
-                <span>0300-10KHAIL (0300-1054245)</span>
-                <span className="text-[10px] text-slate-400 block">Mon - Sat: 9:00 AM - 9:00 PM PKT</span>
-              </div>
-            </div>
 
             <div className="flex items-start gap-3">
               <Mail className="w-4 h-4 text-emerald-400 mt-0.5" />

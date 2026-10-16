@@ -60,15 +60,15 @@ export default function MyRankingsPage() {
           <span className="text-slate-400 block mb-0.5">Current Projected Prize:</span>
           {currentRank === 1 ? (
             <span className="font-extrabold text-amber-400 text-sm">
-              1st Prize: Honda CD 70 2027 Model Motorcycle
+              1st Prize: Bike
             </span>
           ) : currentRank === 2 ? (
             <span className="font-extrabold text-slate-200 text-sm">
-              2nd Prize: iPhone 17 Pro Max
+              2nd Prize: Smart Mobile
             </span>
           ) : currentRank === 3 ? (
             <span className="font-extrabold text-amber-500 text-sm">
-              3rd Prize: Android Smartphone
+              3rd Prize: Mobile
             </span>
           ) : (
             <span className="text-slate-400">

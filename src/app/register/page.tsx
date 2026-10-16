@@ -13,13 +13,10 @@ import {
   AlertCircle,
   ArrowRight,
   CheckCircle2,
-  KeyRound,
-  X,
-  Smartphone,
   RefreshCw,
-  Clock,
-  ArrowLeft
+  Gift,
 } from 'lucide-react';
+import { isValidPakistaniPhone } from '@/lib/phoneValidation';
 
 function RegisterForm() {
   const router = useRouter();
@@ -31,20 +28,11 @@ function RegisterForm() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [refCode, setRefCode] = useState('');
-  const [termsAccepted, setTermsAccepted] = useState(false);
-  const [verificationMethod, setVerificationMethod] = useState<'PHONE' | 'EMAIL'>('EMAIL');
-
-  // Verification modal state
-  const [showOtpModal, setShowOtpModal] = useState(false);
-  const [otpCode, setOtpCode] = useState('');
-  const [otpError, setOtpError] = useState<string | null>(null);
-  const [resendTimer, setResendTimer] = useState(60);
-  const [isSendingOtp, setIsSendingOtp] = useState(false);
-  const [isVerifying, setIsVerifying] = useState(false);
-
+  const [termsAccepted, setTermsAccepted] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Scenario: Capture referral code from query params or localStorage
+  // Capture referral code from URL query param (?ref=...) or localStorage
   useEffect(() => {
     const refParam = searchParams.get('ref');
     if (refParam) {
@@ -61,55 +49,31 @@ function RegisterForm() {
     }
   }, [searchParams]);
 
-  // Adjust default verification method if one field is empty
-  useEffect(() => {
-    if (phone.trim() && !email.trim()) {
-      setVerificationMethod('PHONE');
-    } else if (!phone.trim() && email.trim()) {
-      setVerificationMethod('EMAIL');
-    }
-  }, [phone, email]);
+  const isPhoneEligible = phone ? isValidPakistaniPhone(phone) : false;
 
-  // Resend OTP countdown timer
-  useEffect(() => {
-    if (!showOtpModal || resendTimer <= 0) return;
-    const interval = setInterval(() => {
-      setResendTimer((prev) => (prev > 0 ? prev - 1 : 0));
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [showOtpModal, resendTimer]);
-
-  const getVerificationTarget = () => {
-    return verificationMethod === 'EMAIL' ? email.trim() : phone.trim();
-  };
-
-  const handleInitiateVerification = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    setOtpError(null);
 
     if (!fullName.trim()) {
       setError('Please provide your full legal name.');
       return;
     }
 
-    if (!phone.trim() && !email.trim()) {
-      setError('Please provide at least a mobile number or an email address.');
+    if (!phone.trim()) {
+      setError('Please provide an eligible Pakistani mobile number.');
       return;
     }
 
-    if (verificationMethod === 'PHONE' && !phone.trim()) {
-      setError('Please enter your mobile number to verify via phone, or switch to email verification.');
-      return;
-    }
-
-    if (verificationMethod === 'EMAIL' && !email.trim()) {
-      setError('Please enter your email address to verify via email, or switch to phone verification.');
+    if (!isValidPakistaniPhone(phone)) {
+      setError(
+        'Invalid mobile number. Please enter an eligible Pakistani mobile number (11 digits starting with 03xx, e.g. 03001234567).'
+      );
       return;
     }
 
     if (password !== confirmPassword) {
-      setError('Password and confirmation do not match.');
+      setError('Password and password confirmation do not match.');
       return;
     }
 
@@ -123,91 +87,40 @@ function RegisterForm() {
       return;
     }
 
-    // Call real send-otp API
-    await sendOtpRequest();
-  };
-
-  const sendOtpRequest = async () => {
-    setIsSendingOtp(true);
-    setError(null);
-    setOtpError(null);
-
-    try {
-      const target = getVerificationTarget();
-      const res = await fetch('/api/auth/send-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          target,
-          type: verificationMethod,
-          fullName: fullName.trim(),
-        }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to dispatch verification code.');
-      }
-
-      setOtpCode('');
-      setResendTimer(60);
-      setShowOtpModal(true);
-    } catch (err: any) {
-      setError(err.message || 'Failed to dispatch verification code. Please try again.');
-    } finally {
-      setIsSendingOtp(false);
-    }
-  };
-
-  const handleResendOtp = async () => {
-    if (resendTimer > 0 || isSendingOtp) return;
-    await sendOtpRequest();
-  };
-
-  const handleConfirmRegistration = async () => {
-    if (otpCode.trim().length !== 6) {
-      setOtpError('Please enter the full 6-digit verification code.');
-      return;
-    }
-
-    setIsVerifying(true);
-    setError(null);
-    setOtpError(null);
+    setIsLoading(true);
 
     try {
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          fullName,
-          phone: phone.trim() || null,
+          fullName: fullName.trim(),
+          phone: phone.trim(),
           email: email.trim() || null,
           password,
           confirmPassword,
           termsAccepted,
           refCode: refCode.trim() || null,
-          verificationMethod,
-          otp: otpCode.trim(),
         }),
       });
 
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error || 'Registration failed.');
+        throw new Error(data.error || 'Registration failed. Please try again.');
       }
 
-      // Clear cached referral code after successful registration
+      // Clear cached referral code
       if (typeof window !== 'undefined') {
         localStorage.removeItem('refCode');
       }
 
-      setShowOtpModal(false);
+      // Direct entry to dashboard
       router.push('/dashboard');
       router.refresh();
     } catch (err: any) {
-      setOtpError(err.message || 'An error occurred during verification.');
+      setError(err.message || 'An unexpected error occurred. Please try again.');
     } finally {
-      setIsVerifying(false);
+      setIsLoading(false);
     }
   };
 
@@ -222,20 +135,20 @@ function RegisterForm() {
           </div>
           <h1 className="text-2xl sm:text-3xl font-black text-white">Create Your Account</h1>
           <p className="text-xs text-slate-400">
-            Join 10kakhail to participate for PKR 10 and get your own verified referral link.
+            Join 10kakhail to participate for PKR 10. Direct registration with eligible Pakistani numbers.
           </p>
         </div>
 
-        {/* Referral Welcome Badge */}
+        {/* Referral Welcome Banner */}
         {refCode && (
           <div className="p-3.5 bg-gradient-to-r from-emerald-950/80 to-slate-950 border border-emerald-500/40 rounded-2xl text-xs text-emerald-300 flex items-center gap-3 shadow-md">
             <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center flex-shrink-0 border border-amber-500/30">
               <Sparkles className="w-4 h-4" />
             </div>
             <div>
-              <span className="font-bold text-white block">You were referred by a friend!</span>
+              <span className="font-bold text-white block">Referred by a Friend</span>
               <span className="text-[11px] text-slate-400">
-                Referral Code: <strong className="font-mono text-amber-300">{refCode}</strong>. Register and enter a draw to reward your friend with a bonus ticket.
+                Referral Code: <strong className="font-mono text-amber-300">{refCode}</strong>. You will be successfully registered under this referral.
               </span>
             </div>
           </div>
@@ -248,8 +161,8 @@ function RegisterForm() {
           </div>
         )}
 
-        <form onSubmit={handleInitiateVerification} className="space-y-4 text-xs">
-          {/* Full Name */}
+        <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+          {/* Full Legal Name */}
           <div>
             <label className="text-slate-300 font-semibold block mb-1">Full Legal Name *</label>
             <div className="relative">
@@ -265,113 +178,89 @@ function RegisterForm() {
             </div>
           </div>
 
-          {/* Contact Details */}
-          <div className="space-y-3 p-4 bg-slate-950/60 rounded-2xl border border-white/5">
-            <span className="text-xs font-bold text-amber-400 uppercase tracking-wider block">
-              Contact &amp; Verification Details
-            </span>
-            <p className="text-[11px] text-slate-400">
-              Provide your mobile number, email, or both. Choose which channel to receive your 6-digit verification code.
-            </p>
-
-            {/* Mobile Number */}
-            <div>
-              <div className="flex justify-between items-center mb-1">
-                <label className="text-slate-300 font-semibold">
-                  Mobile Number {verificationMethod === 'PHONE' ? '*' : '(Optional)'}
-                </label>
-                {phone && (
-                  <span className="text-[10px] text-emerald-400 font-medium font-mono">Any valid number</span>
-                )}
-              </div>
-              <div className="relative">
-                <Phone className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="e.g. 03001234567"
-                  className="w-full bg-slate-950 border border-white/10 rounded-xl py-2.5 pl-9 pr-4 text-white focus:outline-none focus:border-emerald-500 text-sm font-mono"
-                />
-              </div>
-            </div>
-
-            {/* Email Address */}
-            <div>
-              <div className="flex justify-between items-center mb-1">
-                <label className="text-slate-300 font-semibold">
-                  Email Address {verificationMethod === 'EMAIL' ? '*' : '(Optional)'}
-                </label>
-                <span className="text-[10px] text-slate-400">For draw notifications</span>
-              </div>
-              <div className="relative">
-                <Mail className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="e.g. usman@example.com"
-                  className="w-full bg-slate-950 border border-white/10 rounded-xl py-2.5 pl-9 pr-4 text-white focus:outline-none focus:border-emerald-500 text-sm font-mono"
-                />
-              </div>
-            </div>
-
-            {/* Verification Channel Selector */}
-            <div className="pt-2 border-t border-white/5 space-y-1.5">
-              <label className="text-slate-300 font-semibold block">
-                Send 6-Digit Verification Code To:
+          {/* Pakistani Mobile Number */}
+          <div>
+            <div className="flex justify-between items-center mb-1">
+              <label className="text-slate-300 font-semibold">
+                Pakistani Mobile Number *
               </label>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setVerificationMethod('EMAIL')}
-                  className={`p-3 rounded-xl border flex items-center gap-2.5 transition text-left ${
-                    verificationMethod === 'EMAIL'
-                      ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300'
-                      : 'bg-slate-900 border-white/10 text-slate-400 hover:text-white'
+              {phone && (
+                <span
+                  className={`text-[10px] font-semibold flex items-center gap-1 ${
+                    isPhoneEligible ? 'text-emerald-400' : 'text-amber-400'
                   }`}
                 >
-                  <Mail className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                  <div>
-                    <span className="font-bold text-xs block">Email Address</span>
-                    <span className="text-[9px] text-slate-400">Receive in Inbox</span>
-                  </div>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setVerificationMethod('PHONE')}
-                  className={`p-3 rounded-xl border flex items-center gap-2.5 transition text-left ${
-                    verificationMethod === 'PHONE'
-                      ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300'
-                      : 'bg-slate-900 border-white/10 text-slate-400 hover:text-white'
-                  }`}
-                >
-                  <Smartphone className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                  <div>
-                    <span className="font-bold text-xs block">Mobile Number</span>
-                    <span className="text-[9px] text-slate-400">Receive via SMS</span>
-                  </div>
-                </button>
+                  {isPhoneEligible ? (
+                    <>
+                      <CheckCircle2 className="w-3 h-3" /> Eligible Pakistani Number
+                    </>
+                  ) : (
+                    'Must be 03xx (11 digits)'
+                  )}
+                </span>
+              )}
+            </div>
+            <div className="relative">
+              <Phone className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="tel"
+                required
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="03001234567"
+                className="w-full bg-slate-950 border border-white/10 rounded-xl py-2.5 pl-9 pr-4 text-white focus:outline-none focus:border-emerald-500 text-sm font-mono"
+              />
+            </div>
+            <div className="mt-1.5 p-2 bg-slate-950/60 rounded-lg border border-white/5 text-[10px] text-slate-400 space-y-0.5">
+              <div className="flex items-center gap-1 text-slate-300 font-medium">
+                <ShieldCheck className="w-3 h-3 text-emerald-400" />
+                <span>PTA Eligible Networks: Jazz (030x/032x), Zong (031x), Ufone (033x), Telenor (034x), SCO (0355)</span>
               </div>
+              <p className="text-slate-500">
+                Direct registration — no SMS/OTP confirmation code required.
+              </p>
+            </div>
+          </div>
+
+          {/* Email Address (Optional) */}
+          <div>
+            <div className="flex justify-between items-center mb-1">
+              <label className="text-slate-300 font-semibold">Email Address (Optional)</label>
+              <span className="text-[10px] text-slate-500">For draw notifications</span>
+            </div>
+            <div className="relative">
+              <Mail className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="e.g. usman@example.com"
+                className="w-full bg-slate-950 border border-white/10 rounded-xl py-2.5 pl-9 pr-4 text-white focus:outline-none focus:border-emerald-500 text-sm font-mono"
+              />
             </div>
           </div>
 
           {/* Referral Code */}
           <div>
-            <label className="text-slate-300 font-semibold block mb-1">
-              Referral Code (Optional)
-            </label>
+            <div className="flex justify-between items-center mb-1">
+              <label className="text-slate-300 font-semibold">Referral Code (Optional)</label>
+              <span className="text-[10px] text-amber-400 font-medium flex items-center gap-1">
+                <Gift className="w-3 h-3" /> If you have a referral code
+              </span>
+            </div>
             <div className="relative">
               <Sparkles className="w-4 h-4 text-amber-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 value={refCode}
                 onChange={(e) => setRefCode(e.target.value.toUpperCase())}
-                placeholder="e.g. 10K-ADMIN786"
+                placeholder="e.g. 10K-HAMZA82"
                 className="w-full bg-slate-950 border border-white/10 rounded-xl py-2.5 pl-9 pr-4 text-white focus:outline-none focus:border-emerald-500 text-sm font-mono uppercase"
               />
             </div>
+            <span className="text-[10px] text-slate-500 mt-1 block">
+              Have a friend&apos;s code? Enter it above to join their team and earn bonuses.
+            </span>
           </div>
 
           {/* Password */}
@@ -417,7 +306,7 @@ function RegisterForm() {
                 className="mt-0.5 rounded bg-slate-950 border-white/20 text-emerald-600 focus:ring-emerald-500"
               />
               <span className="text-[11px] text-slate-400 leading-tight">
-                I am 18+ years of age, a Pakistani citizen/resident, and accept the{' '}
+                I am 18+ years of age, a Pakistani resident, and accept the{' '}
                 <Link href="/terms" className="text-emerald-400 hover:underline">
                   Terms &amp; Conditions
                 </Link>{' '}
@@ -430,161 +319,40 @@ function RegisterForm() {
             </label>
           </div>
 
+          {/* Submit */}
           <button
             type="submit"
-            disabled={isSendingOtp}
+            disabled={isLoading}
             className="w-full py-3.5 px-4 rounded-xl font-extrabold text-sm bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-xl shadow-emerald-950 transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
           >
-            {isSendingOtp ? (
+            {isLoading ? (
               <>
                 <RefreshCw className="w-4 h-4 animate-spin" />
-                <span>Sending 6-Digit Code...</span>
+                <span>Creating Account...</span>
               </>
             ) : (
               <>
-                <span>Send Verification Code ({verificationMethod === 'PHONE' ? 'Phone' : 'Email'})</span>
+                <span>Complete Registration</span>
                 <ArrowRight className="w-4 h-4" />
               </>
             )}
           </button>
         </form>
 
-        <div className="text-center text-xs text-slate-400 pt-2 border-t border-white/10">
-          Already registered?{' '}
+        <div className="text-center text-xs text-slate-400 pt-3 border-t border-white/10">
+          Already have an account?{' '}
           <Link href="/login" className="text-emerald-400 font-bold hover:underline">
-            Log in here
+            Sign In
           </Link>
         </div>
       </div>
-
-      {/* Real Scenario Verification Modal (NO test OTP displayed) */}
-      {showOtpModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-in fade-in duration-200">
-          <div className="bg-slate-900 border border-emerald-500/40 rounded-3xl w-full max-w-md shadow-2xl p-6 sm:p-7 text-white space-y-5 relative">
-            <div className="flex items-center justify-between border-b border-white/10 pb-3">
-              <div className="flex items-center gap-2">
-                <KeyRound className="w-5 h-5 text-emerald-400" />
-                <h3 className="text-lg font-bold">
-                  Verify Your {verificationMethod === 'PHONE' ? 'Mobile Number' : 'Email Address'}
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowOtpModal(false)}
-                className="p-1.5 rounded-xl bg-slate-800 text-slate-400 hover:text-white"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="space-y-2">
-              <p className="text-xs text-slate-300 leading-relaxed">
-                We have sent a 6-digit verification code to:
-              </p>
-              <div className="p-3 bg-slate-950 rounded-xl border border-white/10 flex items-center justify-between">
-                <span className="font-mono font-bold text-emerald-400 text-xs">
-                  {getVerificationTarget()}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setShowOtpModal(false)}
-                  className="text-[10px] text-amber-400 hover:underline font-bold"
-                >
-                  Change
-                </button>
-              </div>
-              <p className="text-[11px] text-slate-400">
-                Please check your {verificationMethod === 'EMAIL' ? 'email inbox (and spam/junk folder)' : 'SMS messages'} and enter the code below.
-              </p>
-            </div>
-
-
-            {otpError && (
-              <div className="p-3 bg-rose-950/60 border border-rose-500/40 rounded-xl text-xs text-rose-300 flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                <span>{otpError}</span>
-              </div>
-            )}
-
-            <div>
-              <label className="text-xs font-semibold text-slate-300 block mb-1.5">
-                Enter 6-Digit Code:
-              </label>
-              <input
-                type="text"
-                maxLength={6}
-                value={otpCode}
-                onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
-                placeholder="------"
-                className="w-full bg-slate-950 border border-white/10 rounded-xl py-3 px-4 text-center font-mono text-2xl text-emerald-400 tracking-[0.5em] focus:outline-none focus:border-emerald-500"
-                autoFocus
-              />
-            </div>
-
-            {/* Resend Code Section */}
-            <div className="flex items-center justify-between text-xs pt-1 border-t border-white/5">
-              <span className="text-slate-400 text-[11px]">Didn&apos;t receive the code?</span>
-              {resendTimer > 0 ? (
-                <span className="text-slate-500 font-mono text-[11px] flex items-center gap-1">
-                  <Clock className="w-3 h-3 text-amber-400" />
-                  Resend in {resendTimer}s
-                </span>
-              ) : (
-                <button
-                  type="button"
-                  disabled={isSendingOtp}
-                  onClick={handleResendOtp}
-                  className="text-emerald-400 hover:text-emerald-300 font-bold text-[11px] flex items-center gap-1 disabled:opacity-50"
-                >
-                  <RefreshCw className="w-3 h-3" />
-                  <span>Resend Code</span>
-                </button>
-              )}
-            </div>
-
-            <div className="flex gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => setShowOtpModal(false)}
-                className="flex-1 py-3 rounded-xl bg-slate-800 text-slate-300 hover:text-white font-bold text-xs transition"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmRegistration}
-                disabled={isVerifying || otpCode.length !== 6}
-                className="flex-1 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-xs disabled:opacity-50 flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-950 transition"
-              >
-                {isVerifying ? (
-                  <>
-                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                    <span>Verifying...</span>
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span>Complete Verification</span>
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
 
 export default function RegisterPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="min-h-[50vh] flex items-center justify-center text-slate-400 text-xs">
-          Loading registration...
-        </div>
-      }
-    >
+    <Suspense fallback={<div className="p-8 text-center text-slate-400">Loading registration...</div>}>
       <RegisterForm />
     </Suspense>
   );

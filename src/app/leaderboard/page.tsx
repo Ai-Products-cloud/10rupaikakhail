@@ -45,7 +45,7 @@ export default function LeaderboardPage() {
               {data.items[1].successfulReferrals} Verified Referrals
             </span>
             <p className="text-xs text-slate-400">
-              Projected Prize: <strong>iPhone 17 Pro Max</strong>
+              Projected Prize: <strong>Smart Mobile</strong>
             </p>
           </div>
 
@@ -62,7 +62,7 @@ export default function LeaderboardPage() {
               {data.items[0].successfulReferrals} Verified Referrals
             </span>
             <p className="text-xs text-amber-300 font-semibold">
-              Projected Prize: <strong>Honda CD 70 2027 Model</strong>
+              Projected Prize: <strong>Bike</strong>
             </p>
           </div>
 
@@ -76,7 +76,7 @@ export default function LeaderboardPage() {
               {data.items[2].successfulReferrals} Verified Referrals
             </span>
             <p className="text-xs text-slate-400">
-              Projected Prize: <strong>Android Smartphone</strong>
+              Projected Prize: <strong>Mobile</strong>
             </p>
           </div>
         </div>

@@ -34,42 +34,12 @@ export function verifyToken(token: string): TokenPayload | null {
   }
 }
 
-/**
- * Flexible phone number normalization:
- * Automatically cleans formatting and handles +92, 0092, 92, leading 0, or 10-digit formats.
- */
-export function normalizePhone(phone?: string | null): string {
-  if (!phone) return '';
-  let cleaned = phone.replace(/[\s\-\(\)\.]/g, '');
-
-  if (cleaned.startsWith('0092')) {
-    cleaned = '0' + cleaned.slice(4);
-  } else if (cleaned.startsWith('+92')) {
-    cleaned = '0' + cleaned.slice(3);
-  } else if (cleaned.startsWith('92') && cleaned.length === 12) {
-    cleaned = '0' + cleaned.slice(2);
-  } else if (/^3[0-9]{9}$/.test(cleaned)) {
-    // Automatically detect Pakistani 10-digit mobile number without leading 0 (e.g. 3001234567)
-    cleaned = '0' + cleaned;
-  }
-
-  return cleaned;
-}
-
-export const normalizePakistaniPhone = normalizePhone;
-
-/**
- * Validates any real phone number:
- * Accepts any real phone number (7 to 15 digits according to standard E.164 telecommunications range).
- */
-export function isValidPhone(phone?: string | null): boolean {
-  if (!phone) return false;
-  const normalized = normalizePhone(phone);
-  const digitsOnly = normalized.replace(/\D/g, '');
-  return digitsOnly.length >= 7 && digitsOnly.length <= 15;
-}
-
-export const isValidPakistaniPhone = isValidPhone;
+export {
+  normalizePhone,
+  normalizePakistaniPhone,
+  isValidPakistaniPhone,
+  isValidPhone,
+} from './phoneValidation';
 
 /**
  * Validates email addresses

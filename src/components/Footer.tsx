@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import { ShieldCheck, PhoneCall, Mail, AlertTriangle, FileText, Lock } from 'lucide-react';
+import { ShieldCheck, Mail, AlertTriangle, FileText, Lock } from 'lucide-react';
 
 export default function Footer() {
   return (
@@ -136,17 +136,6 @@ export default function Footer() {
             <div className="flex items-center gap-2">
               <Mail className="w-3.5 h-3.5 text-emerald-400" />
               <span>support@10kakhail.pk</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <PhoneCall className="w-3.5 h-3.5 text-emerald-400" />
-              <span>0300-10KHAIL (0300-1054245)</span>
-            </div>
-          </div>
-          <div className="mt-4 pt-3 border-t border-white/5">
-            <span className="text-[10px] text-slate-500">Supported Simulated Wallets:</span>
-            <div className="flex items-center gap-2 mt-1 text-slate-300 font-semibold text-xs">
-              <span className="px-2 py-0.5 rounded bg-red-950/60 border border-red-800/40 text-red-300">JazzCash</span>
-              <span className="px-2 py-0.5 rounded bg-emerald-950/60 border border-emerald-800/40 text-emerald-300">Easypaisa</span>
             </div>
           </div>
         </div>

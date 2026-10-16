@@ -87,9 +87,9 @@ export default function HowItWorksPage() {
             The primary proposed prize allocation model is <strong>Referral Ranking</strong>. At draw closing date:
           </p>
           <ul className="list-disc pl-18 text-xs text-slate-300 space-y-1.5">
-            <li><strong className="text-amber-400">Rank #1:</strong> Wins the First Prize — <strong>Honda CD 70 2027 Model Motorcycle</strong></li>
-            <li><strong className="text-slate-300">Rank #2:</strong> Wins the Second Prize — <strong>iPhone 17 Pro Max</strong></li>
-            <li><strong className="text-emerald-400">Rank #3:</strong> Wins the Third Prize — <strong>Android Flagship Smartphone</strong></li>
+            <li><strong className="text-amber-400">Rank #1:</strong> Wins the First Prize — <strong>Bike</strong></li>
+            <li><strong className="text-slate-300">Rank #2:</strong> Wins the Second Prize — <strong>Smart Mobile</strong></li>
+            <li><strong className="text-emerald-400">Rank #3:</strong> Wins the Third Prize — <strong>Mobile</strong></li>
           </ul>
           <p className="text-xs text-slate-400 pl-13 pt-2">
             <strong>Tie-Breaking Rule:</strong> If two participants finish with the identical number of verified referrals, the tie is broken by the <em>earliest timestamp</em> at which the referral total was achieved.

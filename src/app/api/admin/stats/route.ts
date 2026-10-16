@@ -23,6 +23,9 @@ export async function GET() {
       pendingReferrals,
       activeDraws,
       recentAuditLogs,
+      recentUsers,
+      recentPayments,
+      recentEntries,
     ] = await Promise.all([
       prisma.user.count(),
       prisma.drawEntry.count(),
@@ -38,9 +41,66 @@ export async function GET() {
         orderBy: { createdAt: 'desc' },
         include: { admin: { select: { fullName: true } } },
       }),
+      prisma.user.findMany({
+        take: 8,
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          fullName: true,
+          phone: true,
+          email: true,
+          referralCode: true,
+          createdAt: true,
+          referredBy: {
+            select: {
+              fullName: true,
+              referralCode: true,
+            },
+          },
+          _count: {
+            select: {
+              entries: true,
+              payments: true,
+            },
+          },
+        },
+      }),
+      prisma.payment.findMany({
+        take: 8,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          user: {
+            select: {
+              fullName: true,
+              phone: true,
+              referralCode: true,
+            },
+          },
+        },
+      }),
+      prisma.drawEntry.findMany({
+        take: 8,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          user: {
+            select: {
+              fullName: true,
+              phone: true,
+            },
+          },
+          draw: {
+            select: {
+              title: true,
+            },
+          },
+        },
+      }),
     ]);
 
     const compliance = await getComplianceSettings();
+
+    // Calculate actual collected revenue from successful payments
+    const totalRevenuePKR = successfulPayments * 10;
 
     return NextResponse.json({
       metrics: {
@@ -50,13 +110,17 @@ export async function GET() {
         bonusEntries,
         totalPayments,
         successfulPayments,
-        totalSimulatedRevenuePKR: successfulPayments * 10,
+        totalRevenuePKR,
+        totalSimulatedRevenuePKR: totalRevenuePKR,
         verifiedReferrals,
         pendingReferrals,
         activeDraws,
       },
       compliance,
       recentAuditLogs,
+      recentUsers,
+      recentPayments,
+      recentEntries,
     });
   } catch (error: any) {
     console.error('Admin stats error:', error);

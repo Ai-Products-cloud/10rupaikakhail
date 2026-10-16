@@ -84,7 +84,7 @@ export default function PrizeCard({
 
         {rank === 1 && (
           <span className="absolute bottom-2 left-3 text-[10px] bg-slate-950/85 text-amber-400 px-2.5 py-1 rounded-md border border-white/10 font-mono shadow">
-            Honda CD 70 • 2027 Model
+            Bike
           </span>
         )}
       </div>
@@ -94,9 +94,6 @@ export default function PrizeCard({
         <div>
           <div className="flex items-baseline justify-between gap-2 mb-1">
             <h3 className="text-lg sm:text-xl font-extrabold text-white tracking-tight">{title}</h3>
-            <span className="text-xs sm:text-sm font-bold text-amber-400 whitespace-nowrap">
-              {estimatedValue}
-            </span>
           </div>
           <p className="text-[11px] sm:text-xs text-emerald-400 font-medium mb-2.5 sm:mb-3">
             {tagline}
