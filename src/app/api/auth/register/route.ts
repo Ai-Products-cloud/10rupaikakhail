@@ -88,22 +88,45 @@ export async function POST(request: Request) {
       );
     }
 
-    // 3. Referral code validation (if user has a referral code)
-    let referrerUser = null;
-    if (refCode && refCode.trim()) {
-      const cleanRef = refCode.trim().toUpperCase();
-      referrerUser = await prisma.user.findUnique({
-        where: { referralCode: cleanRef },
-      });
+    // 3. Referral Number or Code Validation (MANDATORY TO REGISTER)
+    if (!refCode || !refCode.trim()) {
+      return NextResponse.json(
+        {
+          error:
+            'A valid referral number or referral code is required to register. Registration is only permitted with an invitation from an existing participant.',
+        },
+        { status: 400 }
+      );
+    }
 
-      if (!referrerUser) {
-        return NextResponse.json(
-          {
-            error: `Referral code "${cleanRef}" was not found. Please check your code or leave blank.`,
-          },
-          { status: 400 }
-        );
-      }
+    const cleanRef = refCode.trim().toUpperCase();
+    const cleanRefDigits = refCode.replace(/[\s\-\(\)\.]/g, '');
+    const normalizedRefPhone = normalizePakistaniPhone(refCode.trim());
+
+    const referrerUser = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { referralCode: cleanRef },
+          ...(normalizedRefPhone ? [{ phone: normalizedRefPhone }] : []),
+          { phone: cleanRefDigits },
+        ],
+      },
+    });
+
+    if (!referrerUser) {
+      return NextResponse.json(
+        {
+          error: `Referral "${refCode.trim()}" is invalid or does not exist. You must enter a valid registered mobile number or referral code of an existing member to register.`,
+        },
+        { status: 400 }
+      );
+    }
+
+    if (referrerUser.phone === normalizedPhone) {
+      return NextResponse.json(
+        { error: 'You cannot use your own phone number as the referral number.' },
+        { status: 400 }
+      );
     }
 
     // 4. Check existing user by phone or email

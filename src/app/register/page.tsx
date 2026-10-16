@@ -82,6 +82,11 @@ function RegisterForm() {
       return;
     }
 
+    if (!refCode.trim()) {
+      setError('Referral Number or Referral Code is required. You cannot register without a referral.');
+      return;
+    }
+
     if (!termsAccepted) {
       setError('Please accept the Terms & Conditions and Privacy Policy to proceed.');
       return;
@@ -240,26 +245,29 @@ function RegisterForm() {
             </div>
           </div>
 
-          {/* Referral Code */}
+          {/* Referral Number or Code (Mandatory) */}
           <div>
             <div className="flex justify-between items-center mb-1">
-              <label className="text-slate-300 font-semibold">Referral Code (Optional)</label>
-              <span className="text-[10px] text-amber-400 font-medium flex items-center gap-1">
-                <Gift className="w-3 h-3" /> If you have a referral code
+              <label className="text-slate-300 font-semibold">
+                Referral Number or Code *
+              </label>
+              <span className="text-[10px] text-amber-400 font-bold flex items-center gap-1">
+                <Gift className="w-3 h-3 text-amber-400" /> Mandatory to Register
               </span>
             </div>
             <div className="relative">
               <Sparkles className="w-4 h-4 text-amber-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
+                required
                 value={refCode}
                 onChange={(e) => setRefCode(e.target.value.toUpperCase())}
-                placeholder="e.g. 10K-HAMZA82"
-                className="w-full bg-slate-950 border border-white/10 rounded-xl py-2.5 pl-9 pr-4 text-white focus:outline-none focus:border-emerald-500 text-sm font-mono uppercase"
+                placeholder="e.g. 03001234567 or 10K-ADMIN786"
+                className="w-full bg-slate-950 border border-amber-500/30 rounded-xl py-2.5 pl-9 pr-4 text-white focus:outline-none focus:border-amber-400 text-sm font-mono uppercase"
               />
             </div>
-            <span className="text-[10px] text-slate-500 mt-1 block">
-              Have a friend&apos;s code? Enter it above to join their team and earn bonuses.
+            <span className="text-[10px] text-slate-400 mt-1 block">
+              Enter the mobile number or referral code of the member who invited you. Registration is not permitted without a referral.
             </span>
           </div>
 

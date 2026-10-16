@@ -16,6 +16,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import SimulatedPaymentModal from '@/components/SimulatedPaymentModal';
+import ConcertRegistrationCard from '@/components/ConcertRegistrationCard';
 
 export default function DashboardOverviewPage() {
   const [data, setData] = useState<any>(null);
@@ -130,6 +131,18 @@ export default function DashboardOverviewPage() {
           </span>
         </div>
       </div>
+
+      {/* Official Concert Registration & Admission Pass Card */}
+      <ConcertRegistrationCard
+        concertRegistrations={data?.concertRegistrations || []}
+        onRefresh={() => {
+          fetch('/api/auth/me')
+            .then((res) => (res.ok ? res.json() : null))
+            .then((d) => {
+              if (d) setData(d);
+            });
+        }}
+      />
 
       {/* Referral Link & Social Sharing Box */}
       <div className="bg-slate-900/90 border border-emerald-500/30 rounded-3xl p-6 sm:p-8 space-y-4 shadow-xl">

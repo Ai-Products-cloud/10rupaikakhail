@@ -221,7 +221,38 @@ async function main() {
   }
 
   console.log('Live draw prepared:', draw.title, 'Total entries: 0');
-  console.log('Database reset to clean state with ONLY Administrator account.');
+
+  // 5. Seed Official Event: Grand Pakistan Mega Draw 2027 (PKR 10 Entry)
+  const concert = await prisma.concert.upsert({
+    where: { slug: 'grand-pakistan-mega-draw-2027' },
+    update: {
+      title: 'Grand Pakistan Mega Draw 2027',
+      feePaisa: 1000, // PKR 10 (1000 paisa)
+      currency: 'PKR',
+      status: 'ACTIVE',
+    },
+    create: {
+      title: 'Grand Pakistan Mega Draw 2027',
+      slug: 'grand-pakistan-mega-draw-2027',
+      description:
+        'Official 10 Rupai Ka Khail entry. One-time PKR 10 entry fee securely processed via Safepay gives you an official entry ticket to win 1st Prize Bike, 2nd Prize Smart Mobile, or 3rd Prize Mobile.',
+      venue: 'National Grand Mega Draw • Pakistan',
+      eventDate: new Date('2027-03-23T23:59:59Z'),
+      feePaisa: 1000, // PKR 10 (1000 paisa)
+      currency: 'PKR',
+      status: 'ACTIVE',
+    },
+  });
+
+  // Deactivate any old concert entry
+  await prisma.concert.updateMany({
+    where: { slug: 'pakistan-music-fest-2026' },
+    data: { status: 'INACTIVE' },
+  });
+
+  console.log('Official draw seeded:', concert.title, '(Fee: PKR 10 / 1000 paisa)');
+
+  console.log('Database reset to clean state with Administrator account and Concert.');
 }
 
 main()

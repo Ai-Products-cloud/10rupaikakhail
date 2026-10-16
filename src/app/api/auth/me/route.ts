@@ -84,6 +84,19 @@ export async function GET(request: Request) {
 
     const referralLink = `${domainUrl}/register?ref=${user.referralCode}`;
 
+    // Fetch user concert registrations and admission passes
+    const concertRegistrations = await prisma.registration.findMany({
+      where: { userId: user.id },
+      include: {
+        concert: true,
+        enrollment: true,
+        payments: {
+          orderBy: { createdAt: 'desc' },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
     return NextResponse.json({
       user,
       stats: {
@@ -99,6 +112,7 @@ export async function GET(request: Request) {
       referrals,
       entries,
       payments,
+      concertRegistrations,
     });
   } catch (error: any) {
     console.error('Error fetching user profile:', error);

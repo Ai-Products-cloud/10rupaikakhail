@@ -6,18 +6,30 @@ import prisma from './prisma';
 export async function attachReferral({
   refereeId,
   referralCode,
+  referrerId,
   ipAddress,
 }: {
   refereeId: string;
-  referralCode: string;
+  referralCode?: string;
+  referrerId?: string;
   ipAddress?: string;
 }) {
-  if (!referralCode) return null;
-
-  const cleanCode = referralCode.trim().toUpperCase();
-  const referrer = await prisma.user.findUnique({
-    where: { referralCode: cleanCode },
-  });
+  let referrer = null;
+  if (referrerId) {
+    referrer = await prisma.user.findUnique({ where: { id: referrerId } });
+  } else if (referralCode) {
+    const cleanCode = referralCode.trim().toUpperCase();
+    const cleanPhone = referralCode.replace(/[\s\-\(\)\.]/g, '');
+    referrer = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { referralCode: cleanCode },
+          { phone: cleanCode },
+          { phone: cleanPhone },
+        ],
+      },
+    });
+  }
 
   if (!referrer) return null;
 

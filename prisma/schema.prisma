@@ -31,6 +31,7 @@ model User {
   // Relationships
   entries          DrawEntry[]
   payments         Payment[]
+  registrations    Registration[]
   referralTracking Referral[]   @relation("ReferrerTracker")
   refereeTracking  Referral[]   @relation("RefereeTracker")
   wonPrizes        Winner[]
@@ -208,4 +209,88 @@ model OtpVerification {
   createdAt  DateTime @default(now())
 
   @@index([target])
+}
+
+model Concert {
+  id             String         @id @default(uuid())
+  title          String
+  slug           String         @unique
+  description    String?
+  venue          String?        @default("Islamabad Arena / Lahore Expo")
+  eventDate      DateTime?
+  feePaisa       Int            @default(150000) // PKR 1,500 = 150000 paisa
+  currency       String         @default("PKR")
+  status         String         @default("ACTIVE") // "ACTIVE" | "INACTIVE" | "COMPLETED"
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  registrations  Registration[]
+}
+
+model Registration {
+  id             String           @id @default(uuid())
+  userId         String
+  concertId      String
+  status         String           @default("PENDING") // "PENDING" | "ENROLLED" | "CANCELLED" | "REFUNDED"
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  concert        Concert          @relation(fields: [concertId], references: [id], onDelete: Cascade)
+  payments       ConcertPayment[]
+  enrollment     Enrollment?
+
+  @@unique([userId, concertId])
+  @@index([userId, status])
+}
+
+model ConcertPayment {
+  id                   String        @id @default(uuid())
+  registrationId       String
+  provider             String        @default("SAFEPAY") // "SAFEPAY" | "JAZZCASH" | "BANK_TRANSFER"
+  internalReference    String        @unique // Unique internal payment reference
+  providerReference    String?       @unique // Provider checkout tracker or transaction ID
+  amountPaisa          Int           // Stored in integer paisa
+  currency             String        @default("PKR")
+  status               String        @default("PENDING") // "PENDING" | "SUCCEEDED" | "FAILED" | "CANCELLED" | "REFUNDED"
+  checkoutUrl          String?
+  metadata             String?       // JSON: customer details, IP, retry attempts, reconciliation flags
+  reconciliationNotes  String?
+  verifiedAt           DateTime?
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+
+  registration         Registration  @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+
+  @@index([registrationId, status])
+  @@map("concert_payments")
+}
+
+model WebhookEvent {
+  id                String    @id @default(uuid())
+  provider          String    // e.g. "SAFEPAY", "JAZZCASH"
+  providerEventId   String    // Unique provider event ID
+  eventType         String    // e.g. "payment.succeeded"
+  payload           String    // Raw JSON string
+  receivedAt        DateTime  @default(now())
+  processedAt       DateTime?
+  processingStatus  String    @default("PENDING") // "PENDING" | "PROCESSED" | "IGNORED" | "FAILED"
+  errorMessage      String?
+  createdAt         DateTime  @default(now())
+
+  @@unique([provider, providerEventId])
+  @@index([provider, processingStatus])
+}
+
+model Enrollment {
+  id             String        @id @default(uuid())
+  registrationId String        @unique // Enforce one enrollment per registration
+  ticketCode     String        @unique // e.g. "TKT-CONC-984321"
+  status         String        @default("ACTIVE") // "ACTIVE" | "REVOKED" | "CANCELLED"
+  enrolledAt     DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  registration   Registration  @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+
+  @@index([status])
 }

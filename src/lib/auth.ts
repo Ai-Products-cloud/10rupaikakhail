@@ -58,10 +58,26 @@ export function generateReferralCode(name: string): string {
   return `10K-${cleanName}${randomChars}`;
 }
 
-export async function getSessionUser() {
+export async function getSessionUser(request?: Request) {
   try {
-    const cookieStore = cookies();
-    const token = cookieStore.get('token')?.value;
+    let token: string | undefined;
+
+    if (request) {
+      const authHeader = request.headers.get('authorization') || request.headers.get('Authorization');
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.substring(7).trim();
+      }
+    }
+
+    if (!token) {
+      try {
+        const cookieStore = cookies();
+        token = cookieStore.get('token')?.value;
+      } catch {
+        // cookies() may throw if called outside Next.js request context
+      }
+    }
+
     if (!token) return null;
 
     const decoded = verifyToken(token);
