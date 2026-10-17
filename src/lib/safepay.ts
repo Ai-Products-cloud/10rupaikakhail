@@ -97,8 +97,9 @@ export async function createSafepayCheckoutSession(
       if (token) {
         const url = new URL(config.checkoutBaseUrl);
         url.searchParams.set('beacon', token);
-        if (tbtToken) url.searchParams.set('tbt', tbtToken);
+        url.searchParams.set('env', config.env);
         url.searchParams.set('environment', config.env);
+        if (tbtToken) url.searchParams.set('tbt', tbtToken);
         url.searchParams.set('source', 'hosted');
         url.searchParams.set('order_id', params.internalReference);
         url.searchParams.set('redirect_url', params.redirectUrl);
@@ -121,6 +122,7 @@ export async function createSafepayCheckoutSession(
   url.searchParams.set('beacon', mockToken);
   url.searchParams.set('order_id', params.internalReference);
   url.searchParams.set('env', config.env);
+  url.searchParams.set('environment', config.env);
   url.searchParams.set('source', 'custom');
   url.searchParams.set('redirect_url', params.redirectUrl);
   url.searchParams.set('cancel_url', params.cancelUrl);
