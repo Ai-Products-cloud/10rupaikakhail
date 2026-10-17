@@ -92,7 +92,7 @@ export default function HomePage() {
         <p className="text-xs text-emerald-300 font-medium flex items-center justify-center gap-2 flex-wrap">
           <ShieldCheck className="w-4 h-4 text-emerald-400 flex-shrink-0" />
           <span>
-            <strong>Official Safepay Gateway Active:</strong> Secure online PKR 10 entry checkout via Safepay (Debit/Credit Cards &amp; Raast).
+            <strong>Instant Entry Active:</strong> Secure PKR 10 lucky draw entry checkout via Debit/Credit Cards &amp; Raast.
           </span>
           <Link href="/terms" className="underline text-amber-300 font-bold ml-1 hover:text-white">
             Learn more
@@ -244,7 +244,7 @@ export default function HomePage() {
               </div>
               <h3 className="text-lg font-bold text-white">Participate for PKR 10</h3>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Enter any active lucky draw with a minimal fee of PKR 10 via Safepay (Debit/Credit Cards, Raast, Wallets). Receive an instant entry ticket reference.
+                Enter any active lucky draw with a minimal fee of PKR 10 via Debit/Credit Cards, Raast, or Mobile Wallets. Receive an instant entry ticket reference.
               </p>
             </div>
 

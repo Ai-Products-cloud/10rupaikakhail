@@ -144,7 +144,7 @@ export default function ConcertRegistrationCard({
             Payment Method
           </span>
           <span className="text-slate-200 font-semibold">
-            Safepay Hosted Checkout (Sandbox)
+            Instant Online Checkout
           </span>
         </div>
       </div>
@@ -191,7 +191,7 @@ export default function ConcertRegistrationCard({
             <h4 className="text-sm font-bold text-white">Payment Incomplete</h4>
             <p className="text-xs text-slate-300 mt-0.5">
               Ref: <span className="font-mono text-amber-400">{latestPayment?.internalReference}</span>
-              {' '}• Awaiting Safepay confirmation.
+              {' '}• Awaiting payment gateway confirmation.
             </p>
           </div>
           <div className="flex gap-2">
@@ -203,12 +203,12 @@ export default function ConcertRegistrationCard({
               {loading ? (
                 <>
                   <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                  <span>Connecting to Safepay...</span>
+                  <span>Connecting...</span>
                 </>
               ) : (
                 <>
                   <CreditCard className="w-3.5 h-3.5" />
-                  <span>Complete Safepay Payment (PKR 10)</span>
+                  <span>Complete Payment (PKR 10)</span>
                 </>
               )}
             </button>
@@ -220,7 +220,7 @@ export default function ConcertRegistrationCard({
       {!primaryReg && (
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-1">
           <p className="text-xs text-slate-300">
-            Pay the one-time PKR 10 entry fee securely via Safepay to get your official lucky draw ticket and qualify for prizes.
+            Pay the one-time PKR 10 entry fee securely online to get your official lucky draw ticket and qualify for prizes.
           </p>
           <button
             onClick={() => handleRegisterAndPay('SAFEPAY')}
@@ -230,12 +230,12 @@ export default function ConcertRegistrationCard({
             {loading ? (
               <>
                 <RefreshCw className="w-4 h-4 animate-spin" />
-                <span>Opening Safepay...</span>
+                <span>Connecting...</span>
               </>
             ) : (
               <>
                 <Ticket className="w-4 h-4" />
-                <span>Enter Lucky Draw via Safepay (PKR 10)</span>
+                <span>Enter Lucky Draw (PKR 10)</span>
               </>
             )}
           </button>

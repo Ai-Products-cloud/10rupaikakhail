@@ -19,8 +19,8 @@ export function getSafepayConfig(): SafepayConfig {
     apiBaseUrl: env === 'production' ? 'https://api.getsafepay.com' : 'https://sandbox.api.getsafepay.com',
     checkoutBaseUrl:
       env === 'production'
-        ? 'https://api.getsafepay.com/components'
-        : 'https://sandbox.api.getsafepay.com/components',
+        ? 'https://api.getsafepay.com/checkout'
+        : 'https://sandbox.api.getsafepay.com/checkout',
   };
 }
 

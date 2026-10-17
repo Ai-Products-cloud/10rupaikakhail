@@ -127,7 +127,7 @@ function PaymentCancelledContent() {
             ) : (
               <>
                 <RefreshCw className="w-4 h-4" />
-                <span>Retry Safepay Checkout</span>
+                <span>Retry Payment</span>
               </>
             )}
           </button>

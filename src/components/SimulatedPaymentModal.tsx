@@ -244,7 +244,7 @@ export default function SimulatedPaymentModal({
                 <div className="text-right">
                   <span className="text-[10px] uppercase font-bold text-emerald-400 bg-emerald-950/80 px-2.5 py-1 rounded-full border border-emerald-800/40 inline-flex items-center gap-1">
                     <ShieldCheck className="w-3 h-3" />
-                    <span>Safepay Verified</span>
+                    <span>Verified Entry</span>
                   </span>
                   <p className="text-[11px] text-slate-400 mt-1">Single Entry Qualification</p>
                 </div>
@@ -264,23 +264,23 @@ export default function SimulatedPaymentModal({
                 </div>
               </div>
 
-              {/* Gateway Selection: Official Safepay Hosted Checkout */}
+              {/* Gateway Selection */}
               <div className="space-y-2">
                 <label className="text-xs font-semibold text-slate-300 block">
-                  Payment Gateway:
+                  Payment Method:
                 </label>
                 <div className="p-4 rounded-2xl border border-emerald-500/40 bg-emerald-950/20 space-y-3">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-black text-xs border border-emerald-500/30">
-                        SP
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-emerald-500/30">
+                        <Lock className="w-4 h-4" />
                       </div>
                       <div>
                         <span className="text-xs font-bold text-white block">
-                          Safepay Hosted Checkout
+                          Instant Online Checkout
                         </span>
                         <span className="text-[10px] text-emerald-400 block">
-                          Official Pakistan Payment Gateway
+                          Direct Bank, Card &amp; Raast Processing
                         </span>
                       </div>
                     </div>
@@ -315,7 +315,7 @@ export default function SimulatedPaymentModal({
               <div className="flex items-start gap-2 text-[11px] text-slate-400 leading-tight">
                 <Lock className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0 mt-0.5" />
                 <span>
-                  You will be securely redirected to Safepay's official checkout portal to complete your PKR 10 entry fee. Upon confirmation, your verified ticket pass is generated automatically.
+                  You will be securely redirected to the official checkout page to complete your PKR 10 entry fee. Upon confirmation, your verified ticket pass is generated automatically.
                 </span>
               </div>
 
@@ -329,12 +329,12 @@ export default function SimulatedPaymentModal({
                 {isSubmitting ? (
                   <span className="flex items-center gap-2">
                     <RefreshCw className="w-4 h-4 animate-spin text-white" />
-                    <span>Connecting to Safepay Checkout...</span>
+                    <span>Connecting to Secure Checkout...</span>
                   </span>
                 ) : (
                   <>
                     <ExternalLink className="w-4 h-4 text-amber-300" />
-                    <span>Pay PKR 10 with Safepay &amp; Enter Draw</span>
+                    <span>Pay PKR 10 &amp; Enter Draw</span>
                   </>
                 )}
               </button>

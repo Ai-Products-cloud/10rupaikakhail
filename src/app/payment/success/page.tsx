@@ -142,7 +142,7 @@ function PaymentSuccessContent() {
                 Payment processing — please wait while we confirm your transaction.
               </p>
               <p className="text-xs text-amber-300/80 mt-1">
-                We are currently awaiting the official server-to-server webhook confirmation from Safepay. Your registration will automatically activate once confirmed.
+                We are currently awaiting the official server-to-server confirmation. Your registration will automatically activate once confirmed.
               </p>
             </div>
 
@@ -182,7 +182,7 @@ function PaymentSuccessContent() {
                 Payment Successful — Entry Enrolled
               </h1>
               <p className="text-xs text-slate-400">
-                Safepay webhook signature verified. Your official draw entry ticket is active.
+                Payment verified successfully. Your official draw entry ticket is active.
               </p>
             </div>
 
@@ -258,7 +258,7 @@ function PaymentSuccessContent() {
                 <div>
                   <span className="block text-slate-500">Gateway:</span>
                   <span className="font-semibold text-slate-300">
-                    Safepay Hosted Checkout
+                    Instant Online Checkout
                   </span>
                 </div>
               </div>
