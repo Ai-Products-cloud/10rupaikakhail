@@ -20,6 +20,7 @@ import {
   ArrowRight,
   UserPlus
 } from 'lucide-react';
+import AdminFirstReferralManager from '@/components/AdminFirstReferralManager';
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<any[]>([]);
@@ -96,6 +97,9 @@ export default function AdminUsersPage() {
           Refresh Data
         </button>
       </div>
+
+      {/* First Referral Management Component */}
+      <AdminFirstReferralManager />
 
       {/* Summary KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">

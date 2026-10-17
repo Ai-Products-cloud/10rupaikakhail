@@ -22,6 +22,7 @@ import {
   Clock,
   CheckCircle2,
 } from 'lucide-react';
+import AdminFirstReferralManager from '@/components/AdminFirstReferralManager';
 
 export default function AdminOverviewPage() {
   const [data, setData] = useState<any>(null);
@@ -141,6 +142,9 @@ END OF REPORT - 10KAKHAIL ADMINISTRATION
           </button>
         </div>
       </div>
+
+      {/* Primary / First Referral Code Management */}
+      <AdminFirstReferralManager />
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">

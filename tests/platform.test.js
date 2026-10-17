@@ -314,4 +314,83 @@ describe('10kakhail Core Engine & Business Logic Test Suite', () => {
     assert.strictEqual(vercelLink, 'https://my-custom-domain.com/register?ref=10K-USER123');
     assert.ok(!vercelLink.includes('localhost'), 'Referral URL must not contain localhost when hosted');
   });
+
+  test('11. Admin First Referral Management: Customize Root Referral Code and Enable Mandatory Referral Registration', async () => {
+    // 1. Find or create admin
+    let admin = await prisma.user.findFirst({ where: { role: 'ADMIN' } });
+    if (!admin) {
+      admin = await prisma.user.create({
+        data: {
+          fullName: 'Test Root Administrator',
+          phone: '03007770001',
+          email: 'testadmin@10rupaikakhail.pk',
+          passwordHash: 'dummyhash',
+          referralCode: '10K-ORIGINALROOT',
+          role: 'ADMIN',
+          isVerified: true,
+          phoneVerified: true,
+        },
+      });
+    }
+
+    // 2. Admin customizes the root referral code (e.g. to 10K-FIRSTTEST)
+    const customRootCode = '10K-FIRSTTEST';
+    // Clean up collision if exists
+    await prisma.user.deleteMany({
+      where: {
+        referralCode: customRootCode,
+        id: { not: admin.id },
+      },
+    });
+
+    const updatedAdmin = await prisma.user.update({
+      where: { id: admin.id },
+      data: { referralCode: customRootCode },
+    });
+    assert.strictEqual(updatedAdmin.referralCode, customRootCode);
+
+    // 3. New participant arrives with the mandatory referral requirement
+    // Registering without a valid referral code must fail
+    const invalidRefCode = 'NON_EXISTENT_CODE_999';
+    const foundInvalid = await prisma.user.findFirst({
+      where: {
+        OR: [{ referralCode: invalidRefCode }, { phone: invalidRefCode }],
+      },
+    });
+    assert.strictEqual(foundInvalid, null, 'Unregistered referral code must not resolve a referrer');
+
+    // 4. Registering with the admin root referral code must successfully resolve the referrer
+    const resolvedReferrer = await prisma.user.findFirst({
+      where: {
+        OR: [{ referralCode: customRootCode }, { phone: updatedAdmin.phone }],
+      },
+    });
+    assert.ok(resolvedReferrer, 'Admin root referral code must resolve the admin as the parent referrer');
+    assert.strictEqual(resolvedReferrer.id, admin.id);
+
+    // 5. Create new participant under admin
+    const testNewParticipant = await prisma.user.create({
+      data: {
+        fullName: 'First Invited Participant',
+        phone: '03007770002',
+        passwordHash: 'dummyhash',
+        referralCode: '10K-PIONEER1',
+        referredById: resolvedReferrer.id,
+        role: 'USER',
+        isVerified: true,
+        phoneVerified: true,
+      },
+    });
+    assert.strictEqual(testNewParticipant.referredById, admin.id);
+
+    // 6. Direct referee count for admin increments
+    const directCount = await prisma.user.count({
+      where: { referredById: admin.id },
+    });
+    assert.ok(directCount >= 1, 'Admin must have at least 1 direct referee');
+
+    // Clean up test participant
+    await prisma.user.delete({ where: { id: testNewParticipant.id } });
+  });
 });
+

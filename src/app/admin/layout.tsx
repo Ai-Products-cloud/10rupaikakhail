@@ -22,29 +22,38 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const pathname = usePathname();
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(pathname !== '/admin/login');
 
   useEffect(() => {
+    if (pathname === '/admin/login') {
+      setLoading(false);
+      return;
+    }
+
     fetch('/api/auth/me')
       .then((res) => {
         if (!res.ok) {
-          router.push('/login');
+          router.push('/admin/login');
           return null;
         }
         return res.json();
       })
       .then((data) => {
         if (data?.user?.role !== 'ADMIN') {
-          router.push('/dashboard');
+          router.push('/admin/login');
         } else {
           setCurrentUser(data.user);
         }
         setLoading(false);
       })
       .catch(() => {
-        router.push('/login');
+        router.push('/admin/login');
       });
-  }, [router]);
+  }, [router, pathname]);
+
+  if (pathname === '/admin/login') {
+    return <>{children}</>;
+  }
 
   const navItems = [
     { name: 'Admin Overview', href: '/admin', icon: LayoutDashboard },

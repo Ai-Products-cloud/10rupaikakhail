@@ -121,11 +121,22 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <div className="text-center text-xs text-slate-400 pt-2 border-t border-white/10">
-          New to 10kakhail?{' '}
-          <Link href="/register" className="text-emerald-400 font-bold hover:underline">
-            Register now
-          </Link>
+        <div className="text-center text-xs text-slate-400 pt-2 border-t border-white/10 space-y-2">
+          <div>
+            New to 10kakhail?{' '}
+            <Link href="/register" className="text-emerald-400 font-bold hover:underline">
+              Register now
+            </Link>
+          </div>
+          <div>
+            <Link
+              href="/admin/login"
+              className="text-[11px] text-slate-500 hover:text-amber-400 transition inline-flex items-center gap-1"
+            >
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span>Administrator Portal Access</span>
+            </Link>
+          </div>
         </div>
       </div>
     </div>
