@@ -21,8 +21,8 @@ export async function POST(request: Request) {
 
     const body = await request.json().catch(() => ({}));
 
-    // If drawId is provided, route to the legacy lucky draw payment flow
-    if (body.drawId && !body.concertId) {
+    // If drawId is provided and provider is not SAFEPAY, route to legacy draw payment flow
+    if (body.drawId && !body.concertId && body.provider !== 'SAFEPAY') {
       const { drawId, method, payerAccount, idempotencyKey } = body;
       const payment = await initiateDrawPayment({
         userId: user.id,

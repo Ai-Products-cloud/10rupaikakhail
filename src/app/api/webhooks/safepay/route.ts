@@ -5,6 +5,7 @@ import {
   generateTicketCode,
 } from '@/lib/safepay';
 import { sendConcertEnrollmentEmail } from '@/lib/concertMailer';
+import { processReferralConversion } from '@/lib/referral';
 
 export const dynamic = 'force-dynamic';
 
@@ -353,7 +354,42 @@ export async function POST(request: Request) {
         });
       }
 
-      // 4. Log WebhookEvent as PROCESSED
+      // 4. Also ensure DrawEntry exists for this user in the active Draw
+      const activeDraw = await tx.draw.findFirst({
+        where: { status: 'ACTIVE' },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      if (activeDraw) {
+        const existingEntry = await tx.drawEntry.findFirst({
+          where: {
+            userId: currentPayment.registration.userId,
+            drawId: activeDraw.id,
+          },
+        });
+
+        if (!existingEntry) {
+          await tx.drawEntry.create({
+            data: {
+              entryNumber: enrollment.ticketCode,
+              userId: currentPayment.registration.userId,
+              drawId: activeDraw.id,
+              entryType: 'STANDARD',
+              status: 'ACTIVE',
+              notes: `Verified Safepay entry (${currentPayment.internalReference})`,
+            },
+          });
+
+          await tx.draw.update({
+            where: { id: activeDraw.id },
+            data: {
+              totalEntriesCount: { increment: 1 },
+            },
+          });
+        }
+      }
+
+      // 5. Log WebhookEvent as PROCESSED
       await tx.webhookEvent.upsert({
         where: {
           provider_providerEventId: {
@@ -379,25 +415,38 @@ export async function POST(request: Request) {
       return {
         payment: updatedPayment,
         enrollment,
+        activeDrawId: activeDraw?.id,
         alreadyProcessed: false,
       };
     });
 
-    // 9. Send receipt and confirmation email asynchronously
-    if (!txResult.alreadyProcessed && payment.registration.user.email) {
-      sendConcertEnrollmentEmail({
-        toEmail: payment.registration.user.email,
-        customerName: payment.registration.user.fullName,
-        concertTitle: payment.registration.concert.title,
-        ticketCode: txResult.enrollment.ticketCode,
-        amountPaisa: payment.amountPaisa,
-        currency: payment.currency,
-        internalReference: payment.internalReference,
-        providerReference: tracker || payment.providerReference,
-        enrolledAt: txResult.enrollment.enrolledAt,
-      }).catch((emailErr) => {
-        console.error('Failed to send confirmation email:', emailErr);
-      });
+    // 9. Send receipt and confirmation email asynchronously, and award referral bonus
+    if (!txResult.alreadyProcessed) {
+      if (payment.registration.user.email) {
+        sendConcertEnrollmentEmail({
+          toEmail: payment.registration.user.email,
+          customerName: payment.registration.user.fullName,
+          concertTitle: payment.registration.concert.title,
+          ticketCode: txResult.enrollment.ticketCode,
+          amountPaisa: payment.amountPaisa,
+          currency: payment.currency,
+          internalReference: payment.internalReference,
+          providerReference: tracker || payment.providerReference,
+          enrolledAt: txResult.enrollment.enrolledAt,
+        }).catch((emailErr) => {
+          console.error('Failed to send confirmation email:', emailErr);
+        });
+      }
+
+      // Convert referral bonus for the referrer if referee entered
+      if (txResult.activeDrawId) {
+        processReferralConversion({
+          refereeId: payment.registration.userId,
+          drawId: txResult.activeDrawId,
+        }).catch((refErr) => {
+          console.error('Referral bonus conversion error on Safepay webhook:', refErr);
+        });
+      }
     }
 
     return NextResponse.json({

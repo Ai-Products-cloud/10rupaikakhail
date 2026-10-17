@@ -92,8 +92,7 @@ export default function HomePage() {
         <p className="text-xs text-emerald-300 font-medium flex items-center justify-center gap-2 flex-wrap">
           <ShieldCheck className="w-4 h-4 text-emerald-400 flex-shrink-0" />
           <span>
-            <strong>Pakistan Compliance Notice:</strong> Simulated Demo Mode Active. Real-money operations
-            disabled pending formal Pakistani legal counsel review.
+            <strong>Official Safepay Gateway Active:</strong> Secure online PKR 10 entry checkout via Safepay (Debit/Credit Cards &amp; Raast).
           </span>
           <Link href="/terms" className="underline text-amber-300 font-bold ml-1 hover:text-white">
             Learn more
@@ -142,7 +141,7 @@ export default function HomePage() {
                 className="w-full sm:w-auto px-6 sm:px-8 py-3.5 sm:py-4 rounded-2xl font-black text-sm bg-gradient-to-r from-emerald-500 via-emerald-600 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white shadow-xl shadow-emerald-950 flex items-center justify-center gap-2 transition active:scale-95 cursor-pointer min-h-[48px]"
               >
                 <Sparkles className="w-4 h-4 text-amber-300" />
-                <span>Enter Now for PKR 10 (Demo)</span>
+                <span>Enter Draw for PKR 10</span>
               </button>
 
               <Link
@@ -245,7 +244,7 @@ export default function HomePage() {
               </div>
               <h3 className="text-lg font-bold text-white">Participate for PKR 10</h3>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Enter any active lucky draw with a minimal fee of PKR 10 via JazzCash, Easypaisa, or Sandbox Demo mode. Receive an instant entry ticket reference.
+                Enter any active lucky draw with a minimal fee of PKR 10 via Safepay (Debit/Credit Cards, Raast, Wallets). Receive an instant entry ticket reference.
               </p>
             </div>
 
@@ -431,7 +430,7 @@ export default function HomePage() {
                 onClick={() => setIsPaymentModalOpen(true)}
                 className="px-8 py-4 rounded-xl bg-white/10 hover:bg-white/20 text-white font-extrabold text-sm backdrop-blur-md border border-white/20 transition"
               >
-                Test PKR 10 Simulated Entry
+                Enter Draw for PKR 10
               </button>
             </div>
           </div>

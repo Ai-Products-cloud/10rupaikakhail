@@ -249,7 +249,7 @@ export default function DashboardOverviewPage() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         draw={{
-          id: 'demo-draw-2027',
+          id: 'mega-draw-2027',
           title: 'Grand Pakistan Mega Draw 2027',
           entryFeePKR: 10,
           endDate: '2027-03-23T23:59:59Z',

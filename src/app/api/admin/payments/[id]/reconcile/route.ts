@@ -3,6 +3,7 @@ import { getSessionUser } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import { generateTicketCode } from '@/lib/safepay';
 import { sendConcertEnrollmentEmail } from '@/lib/concertMailer';
+import { processReferralConversion } from '@/lib/referral';
 
 export const dynamic = 'force-dynamic';
 
@@ -116,6 +117,41 @@ export async function POST(
             data: { status: 'ACTIVE' },
           });
         }
+
+        // Also ensure DrawEntry exists for this participant
+        const activeDraw = await tx.draw.findFirst({
+          where: { status: 'ACTIVE' },
+          orderBy: { createdAt: 'desc' },
+        });
+
+        if (activeDraw) {
+          const existingEntry = await tx.drawEntry.findFirst({
+            where: {
+              userId: payment.registration.userId,
+              drawId: activeDraw.id,
+            },
+          });
+
+          if (!existingEntry) {
+            await tx.drawEntry.create({
+              data: {
+                entryNumber: enrollment.ticketCode,
+                userId: payment.registration.userId,
+                drawId: activeDraw.id,
+                entryType: 'STANDARD',
+                status: 'ACTIVE',
+                notes: `Admin reconciled entry (${payment.internalReference})`,
+              },
+            });
+
+            await tx.draw.update({
+              where: { id: activeDraw.id },
+              data: {
+                totalEntriesCount: { increment: 1 },
+              },
+            });
+          }
+        }
       } else if (action === 'REVERSE_REFUND') {
         updatedPayment = await tx.concertPayment.update({
           where: { id: payment.id },
@@ -194,6 +230,16 @@ export async function POST(
         providerReference: payment.providerReference || evidenceRef,
         enrolledAt: result.enrollment.enrolledAt,
       }).catch((e) => console.error('Failed to dispatch receipt on manual approval:', e));
+
+      // Award referral bonus if user was referred
+      prisma.draw.findFirst({ where: { status: 'ACTIVE' } }).then((activeDraw) => {
+        if (activeDraw) {
+          processReferralConversion({
+            refereeId: payment.registration.userId,
+            drawId: activeDraw.id,
+          }).catch((refErr) => console.error('Manual approval referral bonus error:', refErr));
+        }
+      });
     }
 
     return NextResponse.json({
