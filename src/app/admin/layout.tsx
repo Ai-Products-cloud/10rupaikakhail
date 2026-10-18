@@ -78,25 +78,40 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-      {/* Top Admin Warning & Breadcrumb */}
-      <div className="bg-amber-950/40 border border-amber-500/40 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
-        <div className="flex items-center gap-2.5 text-amber-300">
-          <ShieldAlert className="w-5 h-5 flex-shrink-0 text-amber-400" />
-          <span>
-            <strong>Administrator Control Center</strong> — All modifications are recorded in the immutable audit log.
-          </span>
+      {/* Top Admin Bar */}
+      <div className="bg-slate-900 border border-amber-500/30 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs shadow-lg">
+        <div className="flex items-center gap-3 text-amber-300">
+          <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+            <ShieldCheck className="w-4 h-4" />
+          </div>
+          <div>
+            <div className="font-extrabold text-white text-sm tracking-wide">
+              10KAKHAIL • Platform Administration
+            </div>
+            <div className="text-[11px] text-slate-400">
+              Audit-Enforced Management System
+            </div>
+          </div>
         </div>
+
         <div className="flex items-center gap-3">
-          <Link
-            href="/dashboard"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 text-slate-300 hover:text-white border border-white/10 transition"
+          <div className="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span className="font-semibold text-slate-200">
+              {currentUser?.fullName || currentUser?.email || 'Chief Admin'}
+            </span>
+          </div>
+
+          <button
+            onClick={async () => {
+              await fetch('/api/auth/logout', { method: 'POST' });
+              router.push('/admin/login');
+              router.refresh();
+            }}
+            className="px-3 py-1.5 rounded-xl bg-red-950/50 hover:bg-red-900/60 text-red-300 border border-red-500/30 font-bold transition flex items-center gap-1.5"
           >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>User Dashboard</span>
-          </Link>
-          <span className="px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold">
-            Role: Chief Admin
-          </span>
+            <span>Sign Out</span>
+          </button>
         </div>
       </div>
 

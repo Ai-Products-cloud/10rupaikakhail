@@ -1,8 +1,5 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
-import MobileBottomNav from '@/components/MobileBottomNav';
 import SoundPlayer from '@/components/SoundPlayer';
 import SessionTimeoutGuard from '@/components/SessionTimeoutGuard';
 
@@ -30,6 +27,8 @@ export const metadata: Metadata = {
   authors: [{ name: '10kakhail Pakistan' }],
 };
 
+import AppShell from '@/components/AppShell';
+
 export default function RootLayout({
   children,
 }: {
@@ -39,10 +38,7 @@ export default function RootLayout({
     <html lang="en" className="dark scroll-smooth">
       <body className="min-h-screen flex flex-col bg-slate-950 text-slate-100 selection:bg-emerald-500 selection:text-white antialiased">
         <SessionTimeoutGuard />
-        <Navbar />
-        <main className="flex-1 pt-20 pb-16 md:pb-0">{children}</main>
-        <Footer />
-        <MobileBottomNav />
+        <AppShell>{children}</AppShell>
         <SoundPlayer />
       </body>
     </html>

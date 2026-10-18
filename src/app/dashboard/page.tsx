@@ -154,13 +154,18 @@ export default function DashboardOverviewPage() {
 
           {/* Action / Status */}
           {isEnrolled ? (
-            <div className="bg-emerald-950/50 border border-emerald-500/40 rounded-2xl px-5 py-3 text-right space-y-0.5">
-              <span className="text-[10px] uppercase font-bold text-emerald-400 flex items-center gap-1 justify-end">
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>Entry Enrolled</span>
-              </span>
-              <div className="text-base font-mono font-black text-amber-400">
+            <div className="bg-gradient-to-br from-amber-500/20 via-slate-950 to-emerald-950/40 border-2 border-amber-500/40 rounded-2xl p-4 sm:p-5 text-left sm:text-right space-y-1.5 shadow-lg">
+              <div className="flex items-center gap-1.5 sm:justify-end">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span className="text-[11px] font-black uppercase text-emerald-400 tracking-wider">
+                  Verified Ticket Pass
+                </span>
+              </div>
+              <div className="text-xl sm:text-2xl font-mono font-black text-amber-400 tracking-wider select-all">
                 {ticketCode || 'TKT-VERIFIED'}
+              </div>
+              <div className="text-[11px] text-slate-300 font-semibold">
+                Qualified for 1st Prize Bike, 2nd Prize Smart Mobile, 3rd Prize Mobile
               </div>
             </div>
           ) : isPendingPayment ? (

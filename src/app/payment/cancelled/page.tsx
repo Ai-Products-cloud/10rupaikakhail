@@ -86,9 +86,9 @@ function PaymentCancelledContent() {
         {paymentData && (
           <div className="bg-slate-950/60 border border-slate-800 rounded-2xl p-4 text-left text-xs space-y-2">
             <div className="flex justify-between">
-              <span className="text-slate-400">Concert:</span>
+              <span className="text-slate-400">Lucky Draw:</span>
               <span className="font-semibold text-slate-200">
-                {paymentData.registration?.concert?.title || 'Concert Pass'}
+                Grand Pakistan Mega Draw 2027
               </span>
             </div>
             <div className="flex justify-between">
