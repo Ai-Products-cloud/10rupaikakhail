@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
 import { getSessionUser } from '@/lib/auth';
 import prisma from '@/lib/prisma';
+import {
+  checkSafepayTrackerStatus,
+  enrollVerifiedConcertPayment,
+} from '@/lib/safepay';
 
 export const dynamic = 'force-dynamic';
 
@@ -67,23 +71,70 @@ export async function GET(
       );
     }
 
-    const enrollment = payment.registration.enrollment;
+    let activePayment = payment;
+    let enrollment = activePayment.registration.enrollment;
+
+    // Active Status Reconciliation: If payment is pending and provider is Safepay,
+    // query the official status endpoint to detect completed payments instantly
+    if (
+      activePayment.status === 'PENDING' &&
+      activePayment.provider === 'SAFEPAY' &&
+      activePayment.providerReference
+    ) {
+      try {
+        const trackerStatus = await checkSafepayTrackerStatus(
+          activePayment.providerReference
+        );
+
+        if (trackerStatus && trackerStatus.isPaid) {
+          const payloadAmount = Number(trackerStatus.amount);
+          const payloadCurrency = (trackerStatus.currency || 'PKR').toUpperCase();
+          const expectedCurrency = activePayment.currency.toUpperCase();
+
+          const matchesPaisa = payloadAmount === activePayment.amountPaisa;
+          const matchesPKR = payloadAmount === activePayment.amountPaisa / 100;
+          const currencyMatches = payloadCurrency === expectedCurrency;
+
+          if ((matchesPaisa || matchesPKR) && currencyMatches) {
+            const enrollResult = await enrollVerifiedConcertPayment({
+              paymentId: activePayment.id,
+              tracker: activePayment.providerReference,
+              transactionToken: trackerStatus.transactionToken,
+              transactionRef: trackerStatus.transactionRef,
+              signature: trackerStatus.signature,
+              rawPayload: trackerStatus.raw,
+            });
+
+            activePayment = {
+              ...activePayment,
+              status: 'SUCCEEDED',
+              verifiedAt: enrollResult.payment.verifiedAt,
+            } as any;
+            enrollment = enrollResult.enrollment as any;
+          }
+        }
+      } catch (reconErr) {
+        console.warn('[ACTIVE_RECONCILIATION_FAILED]', reconErr);
+      }
+    }
+
     const isEnrolled = !!enrollment && enrollment.status === 'ACTIVE';
 
     return NextResponse.json({
-      paymentId: payment.id,
-      internalReference: payment.internalReference,
-      providerReference: payment.providerReference,
-      provider: payment.provider,
-      amountPaisa: payment.amountPaisa,
-      amountPKR: payment.amountPaisa / 100,
-      currency: payment.currency,
-      status: payment.status,
-      checkoutUrl: payment.checkoutUrl,
-      createdAt: payment.createdAt,
-      verifiedAt: payment.verifiedAt,
-      isConfirmed: payment.status === 'SUCCEEDED',
+      paymentId: activePayment.id,
+      internalReference: activePayment.internalReference,
+      providerReference: activePayment.providerReference,
+      provider: activePayment.provider,
+      amountPaisa: activePayment.amountPaisa,
+      amountPKR: activePayment.amountPaisa / 100,
+      currency: activePayment.currency,
+      status: activePayment.status,
+      checkoutUrl: activePayment.checkoutUrl,
+      createdAt: activePayment.createdAt,
+      verifiedAt: activePayment.verifiedAt,
+      isConfirmed: activePayment.status === 'SUCCEEDED',
       isEnrolled,
+      ticketCode: enrollment?.ticketCode || null,
       customer: {
         id: payment.registration.user.id,
         fullName: payment.registration.user.fullName,

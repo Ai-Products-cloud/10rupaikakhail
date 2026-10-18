@@ -1,4 +1,7 @@
 import crypto from 'crypto';
+import prisma from '@/lib/prisma';
+import { sendConcertEnrollmentEmail } from '@/lib/concertMailer';
+import { processReferralConversion } from '@/lib/referral';
 
 export interface SafepayConfig {
   apiKey: string;
@@ -97,13 +100,19 @@ export async function createSafepayCheckoutSession(
       if (token) {
         const url = new URL(config.checkoutBaseUrl);
         url.searchParams.set('beacon', token);
+        url.searchParams.set('tracker', token);
         url.searchParams.set('env', config.env);
         url.searchParams.set('environment', config.env);
         if (tbtToken) url.searchParams.set('tbt', tbtToken);
         url.searchParams.set('source', 'hosted');
         url.searchParams.set('order_id', params.internalReference);
+        url.searchParams.set('orderId', params.internalReference);
         url.searchParams.set('redirect_url', params.redirectUrl);
+        url.searchParams.set('redirectUrl', params.redirectUrl);
+        url.searchParams.set('successUrl', params.redirectUrl);
         url.searchParams.set('cancel_url', params.cancelUrl);
+        url.searchParams.set('cancelUrl', params.cancelUrl);
+        url.searchParams.set('webhooks', 'true');
 
         return {
           tracker: token,
@@ -120,12 +129,18 @@ export async function createSafepayCheckoutSession(
   const mockToken = `track_${crypto.randomBytes(12).toString('hex')}`;
   const url = new URL(config.checkoutBaseUrl);
   url.searchParams.set('beacon', mockToken);
+  url.searchParams.set('tracker', mockToken);
   url.searchParams.set('order_id', params.internalReference);
+  url.searchParams.set('orderId', params.internalReference);
   url.searchParams.set('env', config.env);
   url.searchParams.set('environment', config.env);
   url.searchParams.set('source', 'custom');
   url.searchParams.set('redirect_url', params.redirectUrl);
+  url.searchParams.set('redirectUrl', params.redirectUrl);
+  url.searchParams.set('successUrl', params.redirectUrl);
   url.searchParams.set('cancel_url', params.cancelUrl);
+  url.searchParams.set('cancelUrl', params.cancelUrl);
+  url.searchParams.set('webhooks', 'true');
 
   return {
     tracker: mockToken,
@@ -250,3 +265,260 @@ export function generateTicketCode(): string {
   const randPart = crypto.randomBytes(3).toString('hex').toUpperCase();
   return `TKT-CONC-${tsPart}-${randPart}`;
 }
+
+export interface SafepayTrackerStatusResult {
+  isPaid: boolean;
+  state?: string;
+  amount?: number;
+  currency?: string;
+  transactionToken?: string;
+  transactionRef?: string;
+  signature?: string;
+  raw?: any;
+}
+
+/**
+ * Actively queries Safepay's official status endpoint for tracker status.
+ * Reconciles transactions when webhooks are pending, delayed, or missed.
+ */
+export async function checkSafepayTrackerStatus(
+  tracker: string
+): Promise<SafepayTrackerStatusResult | null> {
+  if (!tracker) return null;
+  const config = getSafepayConfig();
+
+  try {
+    const res = await fetch(`${config.apiBaseUrl}/order/v1/${encodeURIComponent(tracker)}`, {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+      },
+      signal: AbortSignal.timeout(6000),
+    });
+
+    if (!res.ok) {
+      return null;
+    }
+
+    const json = await res.json();
+    const data = json?.data;
+    if (!data) return null;
+
+    const state = data.state || '';
+    const isPaid = state === 'TRACKER_ENDED' && !!data.transaction;
+
+    return {
+      isPaid,
+      state,
+      amount: data.amount,
+      currency: data.currency,
+      transactionToken: data.transaction?.token,
+      transactionRef: data.transaction?.reference,
+      signature: data.transaction?.signature,
+      raw: data,
+    };
+  } catch (err) {
+    console.warn('[SAFEPAY_TRACKER_LOOKUP_FAILED]', err);
+    return null;
+  }
+}
+
+export interface EnrollPaymentParams {
+  paymentId: string;
+  tracker?: string;
+  transactionToken?: string;
+  transactionRef?: string;
+  signature?: string;
+  rawPayload?: any;
+  eventId?: string;
+}
+
+/**
+ * Authoritative payment enrollment transaction.
+ * Enforces exactly-once enrollment, updates payment state to SUCCEEDED,
+ * generates digital ticket pass, allocates draw entry, and triggers referral conversion.
+ */
+export async function enrollVerifiedConcertPayment(params: EnrollPaymentParams) {
+  const {
+    paymentId,
+    tracker,
+    transactionToken,
+    transactionRef,
+    signature,
+    rawPayload,
+    eventId,
+  } = params;
+
+  const txResult = await prisma.$transaction(async (tx) => {
+    const payment = await tx.concertPayment.findUnique({
+      where: { id: paymentId },
+      include: {
+        registration: {
+          include: {
+            enrollment: true,
+            concert: true,
+            user: true,
+          },
+        },
+      },
+    });
+
+    if (!payment) {
+      throw new Error(`Concert payment record not found: ${paymentId}`);
+    }
+
+    // Idempotency: if already SUCCEEDED and enrolled, return existing
+    if (payment.status === 'SUCCEEDED' && payment.registration.enrollment) {
+      return {
+        payment,
+        enrollment: payment.registration.enrollment,
+        alreadyProcessed: true,
+        user: payment.registration.user,
+        concert: payment.registration.concert,
+      };
+    }
+
+    // 1. Update Payment status to SUCCEEDED
+    let existingMeta: any = {};
+    try {
+      if (payment.metadata) existingMeta = JSON.parse(payment.metadata);
+    } catch {}
+
+    const updatedPayment = await tx.concertPayment.update({
+      where: { id: payment.id },
+      data: {
+        status: 'SUCCEEDED',
+        providerReference: tracker || payment.providerReference,
+        verifiedAt: new Date(),
+        metadata: JSON.stringify({
+          ...existingMeta,
+          transactionToken: transactionToken || undefined,
+          transactionRef: transactionRef || undefined,
+          signature: signature || undefined,
+          reconciledVia: 'SAFEPAY_API_STATUS_LOOKUP',
+          reconciledAt: new Date().toISOString(),
+        }),
+      },
+    });
+
+    // 2. Update Registration status to ENROLLED
+    await tx.registration.update({
+      where: { id: payment.registrationId },
+      data: { status: 'ENROLLED' },
+    });
+
+    // 3. Create Enrollment (Enforce exactly one enrollment per registration)
+    let enrollment = payment.registration.enrollment;
+    if (!enrollment) {
+      enrollment = await tx.enrollment.create({
+        data: {
+          registrationId: payment.registrationId,
+          ticketCode: generateTicketCode(),
+          status: 'ACTIVE',
+          enrolledAt: new Date(),
+        },
+      });
+    }
+
+    // 4. Ensure DrawEntry exists for this user in the active Draw
+    const activeDraw = await tx.draw.findFirst({
+      where: { status: 'ACTIVE' },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (activeDraw) {
+      const existingEntry = await tx.drawEntry.findFirst({
+        where: {
+          userId: payment.registration.userId,
+          drawId: activeDraw.id,
+        },
+      });
+
+      if (!existingEntry) {
+        await tx.drawEntry.create({
+          data: {
+            entryNumber: enrollment.ticketCode,
+            userId: payment.registration.userId,
+            drawId: activeDraw.id,
+            entryType: 'STANDARD',
+            status: 'ACTIVE',
+            notes: `Verified Safepay entry (${payment.internalReference})`,
+          },
+        });
+
+        await tx.draw.update({
+          where: { id: activeDraw.id },
+          data: {
+            totalEntriesCount: { increment: 1 },
+          },
+        });
+      }
+    }
+
+    // 5. Log WebhookEvent as PROCESSED
+    const providerEventId =
+      eventId || (tracker ? `${tracker}-reconciled` : `recon_${Date.now()}`);
+
+    await tx.webhookEvent.upsert({
+      where: {
+        provider_providerEventId: {
+          provider: 'SAFEPAY',
+          providerEventId,
+        },
+      },
+      create: {
+        provider: 'SAFEPAY',
+        providerEventId,
+        eventType: 'payment.succeeded',
+        payload: rawPayload
+          ? typeof rawPayload === 'string'
+            ? rawPayload
+            : JSON.stringify(rawPayload)
+          : JSON.stringify({ tracker, transactionToken }),
+        processedAt: new Date(),
+        processingStatus: 'PROCESSED',
+      },
+      update: {
+        processedAt: new Date(),
+        processingStatus: 'PROCESSED',
+        errorMessage: null,
+      },
+    });
+
+    return {
+      payment: updatedPayment,
+      enrollment,
+      alreadyProcessed: false,
+      user: payment.registration.user,
+      concert: payment.registration.concert,
+      activeDrawId: activeDraw?.id,
+    };
+  });
+
+  // Post-transaction notifications and referral conversion
+  if (!txResult.alreadyProcessed) {
+    if (txResult.user?.email) {
+      sendConcertEnrollmentEmail({
+        toEmail: txResult.user.email,
+        customerName: txResult.user.fullName,
+        concertTitle: txResult.concert.title,
+        ticketCode: txResult.enrollment.ticketCode,
+        amountPaisa: txResult.payment.amountPaisa,
+        currency: txResult.payment.currency,
+        internalReference: txResult.payment.internalReference,
+        providerReference: txResult.payment.providerReference,
+        enrolledAt: txResult.enrollment.enrolledAt,
+      }).catch((mailErr) => console.error('[MAILER_ERROR]', mailErr));
+    }
+
+    if (txResult.activeDrawId) {
+      processReferralConversion({
+        refereeId: txResult.user.id,
+        drawId: txResult.activeDrawId,
+      }).catch((refErr) => console.error('[REFERRAL_ERROR]', refErr));
+    }
+  }
+
+  return txResult;
+}
+
